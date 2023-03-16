@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import { Router } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -8,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 const isDev = `${process.env.NODE_ENV}`.trim() === "development";
 
-IndexRouter.get("/", function (req, res) {
+IndexRouter.get("/", (req, res) => {
   res.sendFile(
     path.join(__dirname, isDev ? "../../public/index.html" : "../../../public/index.html"),
   );

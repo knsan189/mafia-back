@@ -15,7 +15,7 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-log4js.configure(path.join(__dirname, isDev ? "log4js.json" : "../log4js.json"));
+// log4js.configure(path.join(__dirname, isDev ? "log4js.json" : "../log4js.json"));
 app.set("views", path.join(__dirname, "src/views"));
 app.set("view engine", "pug");
 app.use(logger(isDev ? "dev" : "common"));
