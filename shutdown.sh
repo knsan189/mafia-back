@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pgrep starlightServer | xargs kill
+pgrep mafiaBack | xargs kill
 
 echo "Server Off"
 
