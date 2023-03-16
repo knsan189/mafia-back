@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    // "noEmit": true,
+    "noImplicitAny": false,
+    "outDir": "dist",
+    "strict": true
+  },
+  "ts-node": {
+    "esm": true
+  },
+  "include": ["src/**/*", "app.ts", "bin/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
