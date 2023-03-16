@@ -14,10 +14,17 @@ interface Gamer extends User {
 
 interface Room {
   roomName: string;
-  userList: User[];
+  userList: { id: User["socketId"]; isReady: boolean }[];
 }
 
 interface Game {
   status: "idle" | "play" | "end";
   userList: User[];
+}
+
+interface Message {
+  type: "userNotice";
+  text: string;
+  sender: string;
+  receiver?: string;
 }

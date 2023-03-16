@@ -21,6 +21,7 @@ const userJobList = {};
 const mafiaVoteList = {};
 
 const UserMap = new Map<string, User>();
+const RoomMap = new Map<string, Room>();
 const GameMap = new Map<string, Game>();
 
 const createRoomName = () => Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
@@ -40,164 +41,84 @@ io.on("connection", (socket) => {
     if (!user) return;
     socket.leave(user.currentRoomName);
     UserMap.delete(socket.id);
+
+    const room = RoomMap.get(user.currentRoomName);
+    if (!room) return;
+    const newRoom = {
+      ...room,
+      userList: room.userList.filter((roomUser) => user.socketId !== roomUser.id),
+    };
+    RoomMap.set(room.roomName, newRoom);
+    io.to(room.roomName).emit("syncUserList", newRoom.userList);
+
+    const serverMessage: Message = {
+      type: "userNotice",
+      sender: "server",
+      text: `${user.nickname}님이 방을 나가셨습니다.`,
+    };
+    io.to(room.roomName).emit("serverMessage", serverMessage);
   });
 
-  socket.on("setUserInfoRequest", (nickname: string, imgIdx: number) => {
+  socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
     const prevUser = UserMap.get(socket.id);
     if (!prevUser) return;
     const newUser = { ...prevUser, nickname, imgIdx };
     UserMap.set(socket.id, newUser);
-    io.to(newUser.currentRoomName).emit("setUserInfoResponse", newUser);
+    io.to(newUser.currentRoomName).emit("saveUserInfoResponse", newUser);
   });
 
   socket.on("createRoomRequest", () => {
     const user = UserMap.get(socket.id);
-    if (!user) return;
+    if (!user || !user.nickname) return;
     socket.leave(user.currentRoomName);
 
-    const newRoom = createRoomName();
-    socket.join(newRoom);
-
-    const newUser = { ...user, currentRoomName: newRoom };
-    UserMap.set(socket.id, newUser);
-
-    io.to(newUser.currentRoomName).emit("createRoomResponse", newRoom, newUser);
+    const newRoomName = createRoomName();
+    RoomMap.set(newRoomName, { userList: [], roomName: newRoomName });
+    io.to(newRoomName).emit("createRoomResponse", newRoomName);
   });
 
-  // 새로 만든 방 정보 목록에 추가
-  // 추가된 방 목록 Lobby로 전송
-  // 방 roomID 는 cnt로 autoIncrement
-  // socket.on("newRoomInfo", (data) => {
-  //   cnt += 1;
-  //   // let roomID = cnt;
-  //   roomList[cnt] = {
-  //     roomID: cnt,
-  //     roomName: data.room_name,
-  //     roomLocked: data.room_locked,
-  //     roomPW: data.room_PW,
-  //     roomOwner: data.room_owner,
-  //   };
-  //   console.log("roomList[cnt]:", roomList[cnt]);
-  //   io.emit("allRooms", {
-  //     roomList,
-  //   });
-  // });
+  socket.on("joinRoomRequest", (roomName: string) => {
+    const user = UserMap.get(socket.id);
+    const room = RoomMap.get(roomName);
+    if (!user || !room) return;
+    socket.leave(user.currentRoomName);
+    socket.join(roomName);
 
-  // // User의 chat 수신 - 전체 전송
-  // socket.on('sendChat', (data) => {
-  //   io.to(data.from_id).emit('getLBChat', {
-  //     from_id: data.from_id,
-  //     msg: data.msg,
-  //   });
-  // });
+    const newUser = { ...user, currentRoomName: roomName };
+    UserMap.set(socket.id, newUser);
 
-  // ----------------------------------------------// GamePage
-  // 방 입장
-  // 같은 방 입장한 회원 구분 roomID - socket.id
-  // socket.on("join room", ({ roomID, myEmail }) => {
-  //   const { rooms } = io.sockets.adapter;
-  //   const room = rooms.get(roomID);
-  //   const myName = emailToSocket[myEmail] ? emailToSocket[myEmail]?.userName : false;
+    const newRoom = {
+      ...room,
+      userList: [...room.userList, { id: newUser.socketId, isReady: false }],
+    };
+    RoomMap.set(roomName, newRoom);
 
-  //   console.log("joinInfo: ", roomID, myEmail);
-  //   // 게임페이지에서 userInfo UPDATE
-  //   socketToEmail[socket.id] = myEmail;
-  //   emailToSocket[myEmail] ? (emailToSocket[myEmail].userID = socket.id) : false;
+    socket.emit("userListSync", newRoom.userList);
 
-  //   console.log("emailToSocket jr: ", emailToSocket);
-  //   console.log("socketToEmail jr: ", socketToEmail);
+    const serverMessage: Message = {
+      type: "userNotice",
+      sender: "Server",
+      text: `${newUser.nickname}님이 입장하셨습니다.`,
+    };
 
-  //   if (room?.size > 7) {
-  //     socket.emit("room full");
-  //     return;
-  //   }
-  //   room?.size !== undefined
-  //     ? roomToUser[roomID].push(socket.id)
-  //     : ((roomToUser[roomID] = [socket.id]), (checkReady[roomID] = 0));
-  //   socket.join(roomID);
-  //   userToRoom[socket.id] = roomID;
-  //   // console.log('usersInfo: ', roomToUser[roomID]);
+    socket.emit("serverMessage", serverMessage);
+  });
 
-  //   const usersInThisRoom = roomToUser[roomID].filter((id) => id !== socket.id);
-  //   console.log("usersInThisRoom", usersInThisRoom);
-  //   socket.emit("all users", usersInThisRoom);
+  socket.on("gameReadyRequest", (isReady: boolean) => {
+    const user = UserMap.get(socket.id);
+    if (!user) throw new Error();
+    const room = RoomMap.get(user.currentRoomName);
+    if (!room) throw new Error();
+    const newRoom: Room = {
+      ...room,
+      userList: room.userList.map((roomUser) =>
+        roomUser.id !== socket.id ? roomUser : { ...roomUser, isReady },
+      ),
+    };
 
-  //   // emailToSocket[data.user_email] = {
-  //   //   userID: data.user_id,
-  //   //   userName: data.user_name,
-  //   // };
-  //   // socketToEmail[data.user_id] = data.user_email;
-
-  //   io.to(roomID).emit("notice", {
-  //     msg: `${socket.id}님이 입장했습니다.`,
-  //     roomToUser: roomToUser[roomID], // socketid arr
-  //     socketToEmail,
-  //     emailToSocket,
-  //   });
-  //   // User 입장 시 개인 welcome msg
-  //   socket.emit("getDM", {
-  //     from_id: "admin",
-  //     to_id: socket.id,
-  //     msg: `Hello, ${socket.id}`,
-  //   });
-
-  //   console.log("rooms :", rooms);
-  //   console.log("room :", room);
-  //   console.log("userToRoom:", userToRoom);
-  //   console.log("roomToUser:", roomToUser);
-  // });
-
-  // socket.on("sending signal", (payload) => {
-  //   console.log("----------------sending signal");
-  //   io.to(payload.userToSignal).emit("user joined", {
-  //     signal: payload.signal,
-  //     callerID: payload.callerID,
-  //   });
-  // });
-
-  // socket.on("returning signal", (payload) => {
-  //   console.log("----------------returning signal");
-
-  //   io.to(payload.callerID).emit("receiving returned signal", {
-  //     signal: payload.signal,
-  //     id: socket.id,
-  //   });
-  // });
-
-  // // 방 나가기 클릭시,
-  // socket.on("exitRoom", async (data) => {
-  //   const roomID = userToRoom[data.from_id];
-  //   const myName = emailToSocket[socketToEmail[data.from_id]]?.userName;
-  //   emailToSocket[socketToEmail[data.from_id]]
-  //     ? (emailToSocket[socketToEmail[data.from_id]].userID = "")
-  //     : false;
-  //   // let userlistinRoom = await io.in(roomID).fetchSockets();
-  //   // console.log('userlistinRoom:', userlistinRoom);
-
-  //   roomToUser[roomID]?.length > 1
-  //     ? (roomToUser[roomID] = roomToUser[roomID].filter((e) => e !== data.from_id))
-  //     : delete roomToUser[data.from_id];
-
-  //   delete socketToEmail[socket.id];
-
-  //   io.to(roomID).emit("notice", {
-  //     msg: `${myName}님이 방을 나갔습니다.`,
-  //     roomToUser: roomToUser[roomID] || false,
-  //     socketToEmail,
-  //     emailToSocket,
-  //   });
-
-  //   socket.leave(roomID);
-  //   delete userToRoom[data.from_id];
-  // });
-
-  // // User의 chat 수신 - 전체 전송
-  // socket.on("sendChat", (data) => {
-  //   io.to(userToRoom[data.from_id]).emit("getChat", {
-  //     from_id: data.from_id,
-  //     msg: data.msg,
-  //   });
-  // });
+    RoomMap.set(room.roomName, newRoom);
+    io.to(room.roomName).emit("gameReadySync");
+  });
 
   // // DM 수신 후 전송 (보낸 user, 받는 user both)
   // socket.on("sendDM", (data) => {
