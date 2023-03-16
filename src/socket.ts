@@ -1,6 +1,6 @@
 import { instrument } from "@socket.io/admin-ui";
 import { Server } from "socket.io";
-import { jobList, timerList } from "./config/const.config";
+import { jobList, timers } from "./config/const.config";
 
 const io = new Server({
   cors: {
@@ -73,7 +73,7 @@ io.on("connection", (socket) => {
     socket.leave(user.currentRoomName);
 
     const newRoomName = createRoomName();
-    RoomMap.set(newRoomName, { userList: [], roomName: newRoomName });
+    RoomMap.set(newRoomName, { userList: [], roomName: newRoomName, status: "idle" });
     io.to(newRoomName).emit("createRoomResponse", newRoomName);
   });
 
@@ -120,6 +120,23 @@ io.on("connection", (socket) => {
     io.to(room.roomName).emit("gameReadySync");
   });
 
+  socket.on("gameStartRequest", () => {
+    const user = UserMap.get(socket.id);
+    if (!user) return;
+    const serverMessage: Message = {
+      type: "gameNotice",
+      sender: "Server",
+      text: `게임이 시작되었습니다.`,
+    };
+
+    const timer = setInterval(() => {
+      console.log(1);
+    }, 1000);
+    const newGame: Game = { timer, status: "night" };
+
+    socket.emit("serverMessage", serverMessage);
+  });
+
   // // DM 수신 후 전송 (보낸 user, 받는 user both)
   // socket.on("sendDM", (data) => {
   //   io.to(`${data.to_id}`).to(`${data.from_id}`).emit("getDM", {
@@ -128,8 +145,6 @@ io.on("connection", (socket) => {
   //     msg: data.msg,
   //   });
   // });
-
-  // socket.emit("sendJoinMessage", socket.id);
 
   // // 게임 시작 전,
   // // 방장 빼고 전원 ready 누르면 방장 gamestart 버튼 disabled=false

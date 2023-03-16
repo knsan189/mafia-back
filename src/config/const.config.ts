@@ -5,7 +5,7 @@ export const jobList = [
   ["citizen", "citizen", "citizen", "mafia", "citizen", "mafia", "citizen", "citizen"],
 ];
 
-export const timerList = [
+export const timers = [
   {
     /** 밤 시간 */
     type: "night",

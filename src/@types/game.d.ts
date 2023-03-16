@@ -14,16 +14,19 @@ interface Gamer extends User {
 
 interface Room {
   roomName: string;
+  status: "idle" | "play";
   userList: { id: User["socketId"]; isReady: boolean }[];
 }
 
 interface Game {
-  status: "idle" | "play" | "end";
+  roomName: string;
+  status: "night";
   userList: User[];
+  timer: NodeJS.Timer;
 }
 
 interface Message {
-  type: "userNotice";
+  type: "userNotice" | "gameNotice";
   text: string;
   sender: string;
   receiver?: string;
