@@ -134,7 +134,7 @@ io.on("connection", (socket) => {
     const timer = setInterval(() => {
       console.log(1);
     }, 1000);
-    const newGame: Game = { timer, status: "night" };
+    // const newGame: Game = { timer, status: "night" };
 
     socket.emit("serverMessage", serverMessage);
   });
