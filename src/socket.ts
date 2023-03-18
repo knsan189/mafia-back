@@ -71,11 +71,9 @@ io.on("connection", (socket) => {
 
   socket.on("createRoomRequest", () => {
     const user = UserMap.get(socket.id);
-    console.log(user);
     if (!user || !user.nickname) return;
-    socket.leave(user.currentRoomName);
     const newRoomName = createRoomName();
-    console.log(newRoomName);
+    console.log("방 생성", newRoomName);
     RoomMap.set(newRoomName, { userList: [], roomName: newRoomName, status: "idle" });
     io.to(newRoomName).emit("createRoomResponse", newRoomName);
   });
