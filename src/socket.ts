@@ -75,7 +75,7 @@ io.on("connection", (socket) => {
     const newRoomName = createRoomName();
     console.log("방 생성", newRoomName);
     RoomMap.set(newRoomName, { userList: [], roomName: newRoomName, status: "idle" });
-    io.to(newRoomName).emit("createRoomResponse", newRoomName);
+    io.to(user.currentRoomName).emit("createRoomResponse", newRoomName);
   });
 
   socket.on("joinRoomRequest", (roomName: string) => {
