@@ -61,8 +61,10 @@ io.on("connection", (socket) => {
 
   socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
     const prevUser = UserMap.get(socket.id);
+    console.log(socket.id, prevUser);
     if (!prevUser) return;
     const newUser = { ...prevUser, nickname, imgIdx };
+    console.log(newUser);
     UserMap.set(socket.id, newUser);
     io.to(newUser.currentRoomName).emit("saveUserInfoResponse", newUser);
   });
