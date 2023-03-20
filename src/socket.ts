@@ -10,21 +10,21 @@ const io = new Server({
 
 instrument(io, { auth: false, mode: "development" });
 
-const checkReady = {};
-const roomList = {};
-const roomToUser = {}; // roomID - [user1(socekt.id) , user2(socekt.id), user3(socekt.id), ...]
-const userToRoom = {}; // socket.id - roomID
-const roomTimer = {};
-const peopleVotedList = {};
-const finalVoteList = {};
-const userJobList = {};
-const mafiaVoteList = {};
+function shuffle<T>(array: T[]) {
+  return array.sort(() => Math.random() - 0.5);
+}
+
+function createRoomName() {
+  return Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
+}
 
 const UserMap = new Map<string, User>();
 const RoomMap = new Map<string, Room>();
 const GameMap = new Map<string, Game>();
 
-const createRoomName = () => Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
+// function setMap<T>(target: T, map: Map<string, T>) {
+//   map.set()
+// }
 
 io.on("connection", (socket) => {
   console.log("----신규 유저 접속----");
@@ -36,6 +36,7 @@ io.on("connection", (socket) => {
   UserMap.set(socket.id, createUser);
   socket.join(tempRoom);
 
+  /** 접속 종료시 */
   socket.on("disconnect", () => {
     const user = UserMap.get(socket.id);
     if (!user) return;
@@ -48,8 +49,8 @@ io.on("connection", (socket) => {
       ...room,
       userList: room.userList.filter((roomUser) => user.socketId !== roomUser.id),
     };
+    io.to(room.roomName).emit("userListSync", newRoom.userList);
     RoomMap.set(room.roomName, newRoom);
-    io.to(room.roomName).emit("syncUserList", newRoom.userList);
 
     const serverMessage: Message = {
       type: "userNotice",
@@ -57,6 +58,15 @@ io.on("connection", (socket) => {
       text: `${user.nickname}님이 방을 나가셨습니다.`,
     };
     io.to(room.roomName).emit("serverMessage", serverMessage);
+
+    const game = GameMap.get(user.currentRoomName);
+    if (!game) return;
+    const newGame = {
+      ...game,
+      userList: game.userList.filter((player) => player.socketId !== user.socketId),
+    };
+    GameMap.set(room.roomName, newGame);
+    io.to(room.roomName).emit("gameSync");
   });
 
   socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
@@ -123,7 +133,9 @@ io.on("connection", (socket) => {
 
   socket.on("gameStartRequest", () => {
     const user = UserMap.get(socket.id);
-    if (!user) return;
+    const room = RoomMap.get(user?.currentRoomName || "");
+    if (!user || !room) return;
+
     const serverMessage: Message = {
       type: "gameNotice",
       sender: "Server",
@@ -131,10 +143,30 @@ io.on("connection", (socket) => {
     };
 
     const timer = setInterval(() => {
-      console.log(1);
+      socket.emit("timerSync");
     }, 1000);
+<<<<<<< HEAD
     // const newGame: Game = { timer, status: "night" };
+=======
+>>>>>>> 3594ada (타이머 변경, 플레이어 타입 추가)
 
+    const newJobList = shuffle(jobList);
+
+    const gamerList: Player[] = room.userList.map((roomUser, index) => ({
+      socketId: roomUser.id,
+      job: newJobList[index],
+      status: "alive",
+    }));
+
+    const newGame: Game = {
+      timer,
+      roomName: user.currentRoomName,
+      userList: gamerList,
+      voteList: [],
+      ...timers[0],
+    };
+
+    GameMap.set(user.currentRoomName, newGame);
     socket.emit("serverMessage", serverMessage);
   });
 

@@ -6,10 +6,10 @@ interface User {
   currentRoomName: Room["roomName"];
 }
 
-interface Gamer extends User {
+interface Player {
+  socketId: string;
   job: "mafia" | "citizen";
   status: "alive" | "dead";
-  joinedTime: Date;
 }
 
 interface Room {
@@ -20,13 +20,16 @@ interface Room {
 
 interface Game {
   roomName: string;
-  status: "night";
-  userList: User[];
+  status: "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
+  userList: Player[];
+  voteList: User["socketId"][];
   timer: NodeJS.Timer;
+  ms: number;
+  message: string;
 }
 
 interface Message {
-  type: "userNotice" | "gameNotice";
+  type: "userNotice" | "gameNotice" | "voteNotice" | "mafiaChat" | "userChat";
   text: string;
   sender: string;
   receiver?: string;
