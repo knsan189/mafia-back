@@ -22,10 +22,11 @@ interface Game {
   roomName: string;
   status: "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
   userList: Player[];
-  voteList: User["socketId"][];
+  voteList: Player["socketId"][];
   timer: NodeJS.Timer;
   ms: number;
   message: string;
+  targetPlayer?: Player["socketId"];
 }
 
 interface Message {

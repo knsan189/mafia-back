@@ -1,6 +1,6 @@
 import { instrument } from "@socket.io/admin-ui";
 import { Server } from "socket.io";
-import { jobList, timers } from "./config/const.config";
+import { jobList, timers } from "./config/const.config.js";
 
 const io = new Server({
   cors: {
@@ -61,9 +61,10 @@ io.on("connection", (socket) => {
 
     const game = GameMap.get(user.currentRoomName);
     if (!game) return;
-    const newGame = {
+    const newGame: Game = {
       ...game,
       userList: game.userList.filter((player) => player.socketId !== user.socketId),
+      voteList: game.voteList.filter((player) => player !== user.socketId),
     };
     GameMap.set(room.roomName, newGame);
     io.to(room.roomName).emit("gameSync");
@@ -142,17 +143,20 @@ io.on("connection", (socket) => {
       text: `게임이 시작되었습니다.`,
     };
 
+    let timerIndex = 0;
+    let { ms } = timers[timerIndex];
     const timer = setInterval(() => {
-      socket.emit("timerSync");
+      if (ms <= 0) {
+        timerIndex += 1;
+        ms = timers[timerIndex].ms;
+      }
+      socket.emit("timerSync", ms);
+      ms -= 1000;
     }, 1000);
-<<<<<<< HEAD
-    // const newGame: Game = { timer, status: "night" };
-=======
->>>>>>> 3594ada (타이머 변경, 플레이어 타입 추가)
 
     const newJobList = shuffle(jobList);
 
-    const gamerList: Player[] = room.userList.map((roomUser, index) => ({
+    const playerList: Player[] = room.userList.map((roomUser, index) => ({
       socketId: roomUser.id,
       job: newJobList[index],
       status: "alive",
@@ -161,9 +165,9 @@ io.on("connection", (socket) => {
     const newGame: Game = {
       timer,
       roomName: user.currentRoomName,
-      userList: gamerList,
+      userList: playerList,
       voteList: [],
-      ...timers[0],
+      ...timers[timerIndex],
     };
 
     GameMap.set(user.currentRoomName, newGame);
