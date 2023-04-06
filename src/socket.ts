@@ -129,7 +129,7 @@ io.on("connection", (socket) => {
     };
 
     RoomMap.set(room.roomName, newRoom);
-    io.to(room.roomName).emit("gameReadySync");
+    io.to(room.roomName).emit("gameReadySync", newRoom.userList);
   });
 
   socket.on("gameStartRequest", () => {
