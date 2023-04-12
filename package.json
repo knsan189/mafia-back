@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon --exec ts-node --files bin/www.ts",
-    "build": "tsc && cp -r src/views/ dist/src",
-    "start": "cross-env NODE_ENV=production node dist/bin/www.js"
+    "dev": "nodemon --exec ts-node --files bin/www.ts",
+    "build": "tsc",
+    "start": "node dist/bin/www.js"
   },
   "dependencies": {
     "@socket.io/admin-ui": "^0.5.1",
