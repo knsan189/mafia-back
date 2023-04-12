@@ -34,35 +34,36 @@ io.on("connection", (socket) => {
 
   /** 유저 접속 종료시 */
   socket.on("disconnect", () => {
-    const user = UserMap.get(socket.id);
-    if (!user) throw new Error();
-
     /** 유저 종료 처리 */
-    user.leaveRoom();
-    UserMap.delete(socket.id);
+    const user = UserMap.get(socket.id);
+    if (user) {
+      user.leaveRoom();
+      UserMap.delete(socket.id);
+      /** 방 나가기 처리 */
+      const room = RoomMap.get(user.currentRoomName);
+      if (room) {
+        room.removeUser(user.id);
+        io.to(room.roomName).emit("userListSync", room.userList);
+        io.to(room.roomName).emit("messageResponse", {
+          type: "userNotice",
+          sender: "server",
+          text: `${user.nickname}님이 방을 나가셨습니다.`,
+        });
+        RoomMap.set(room.roomName, room);
 
-    /** 방 나가기 처리 */
-    const room = RoomMap.get(user.currentRoomName);
-    if (!room) throw new Error();
-    room.removeUser(user.id);
-    io.to(room.roomName).emit("userListSync", room.userList);
-    io.to(room.roomName).emit("messageResponse", {
-      type: "userNotice",
-      sender: "server",
-      text: `${user.nickname}님이 방을 나가셨습니다.`,
-    });
-    RoomMap.set(room.roomName, room);
-
-    /** 게임 나가기 처리 */
-    const game = GameMap.get(user.currentRoomName);
-    if (!game) return;
-    const newGame: Game = {
-      ...game,
-      userList: game.userList.filter((player) => player.socketId !== user.id),
-      voteList: game.voteList.filter((player) => player !== user.id),
-    };
-    GameMap.set(room.roomName, newGame);
-    io.to(room.roomName).emit("gameSync");
+        /** 게임 나가기 처리 */
+        const game = GameMap.get(user.currentRoomName);
+        if (game) {
+          const newGame: Game = {
+            ...game,
+            userList: game.userList.filter((player) => player.socketId !== user.id),
+            voteList: game.voteList.filter((player) => player !== user.id),
+          };
+          GameMap.set(room.roomName, newGame);
+          io.to(room.roomName).emit("gameSync");
+        }
+      }
+    }
   });
 
   socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
