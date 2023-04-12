@@ -29,8 +29,13 @@ interface Game {
   targetPlayer?: Player["socketId"];
 }
 
-interface Message {
+interface MessageResponse {
   type: "userNotice" | "gameNotice" | "voteNotice" | "mafiaChat" | "userChat";
+  text: string;
+  sender: string;
+}
+
+interface MessageRequest {
   text: string;
   sender: string;
   receiver?: string;

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { instrument } from "@socket.io/admin-ui";
 import { Server } from "socket.io";
 import { jobList, timers } from "./config/const.config.js";
@@ -21,10 +22,6 @@ function createRoomName() {
 const UserMap = new Map<string, User>();
 const RoomMap = new Map<string, Room>();
 const GameMap = new Map<string, Game>();
-
-// function setMap<T>(target: T, map: Map<string, T>) {
-//   map.set()
-// }
 
 io.on("connection", (socket) => {
   console.log("----신규 유저 접속----");
@@ -52,12 +49,12 @@ io.on("connection", (socket) => {
     io.to(room.roomName).emit("userListSync", newRoom.userList);
     RoomMap.set(room.roomName, newRoom);
 
-    const serverMessage: Message = {
+    const messageResponse: MessageResponse = {
       type: "userNotice",
       sender: "server",
       text: `${user.nickname}님이 방을 나가셨습니다.`,
     };
-    io.to(room.roomName).emit("serverMessage", serverMessage);
+    io.to(room.roomName).emit("messageResponse", messageResponse);
 
     const game = GameMap.get(user.currentRoomName);
     if (!game) return;
@@ -107,13 +104,13 @@ io.on("connection", (socket) => {
 
     socket.emit("userListSync", newRoom.userList);
 
-    const serverMessage: Message = {
+    const messageResponse: MessageResponse = {
       type: "userNotice",
       sender: "Server",
       text: `${newUser.nickname}님이 입장하셨습니다.`,
     };
 
-    socket.emit("serverMessage", serverMessage);
+    socket.emit("messageResponse", messageResponse);
   });
 
   socket.on("gameReadyRequest", (isReady: boolean) => {
@@ -137,7 +134,7 @@ io.on("connection", (socket) => {
     const room = RoomMap.get(user?.currentRoomName || "");
     if (!user || !room) return;
 
-    const serverMessage: Message = {
+    const messageResponse: MessageResponse = {
       type: "gameNotice",
       sender: "Server",
       text: `게임이 시작되었습니다.`,
@@ -171,7 +168,16 @@ io.on("connection", (socket) => {
     };
 
     GameMap.set(user.currentRoomName, newGame);
-    socket.emit("serverMessage", serverMessage);
+    socket.emit("messageResponse", messageResponse);
+  });
+
+  socket.on("messageRequest", ({ text, receiver }: MessageRequest) => {
+    const user = UserMap.get(socket.id);
+    if (!user) return;
+
+    socket.broadcast
+      .to(user.currentRoomName)
+      .emit("messageResponse", { type: "userChat", text, sender: socket.id });
   });
 
   // // DM 수신 후 전송 (보낸 user, 받는 user both)
