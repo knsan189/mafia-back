@@ -6,6 +6,13 @@ interface User {
   currentRoomName: Room["roomName"];
 }
 
+interface UserInterface {
+  socketId: string;
+  nickname?: string;
+  imgIdx: number;
+  currentRoomName: Room["roomName"];
+}
+
 interface Player {
   socketId: string;
   job: "mafia" | "citizen";
@@ -29,6 +36,15 @@ interface Game {
   targetPlayer?: Player["socketId"];
 }
 
+interface GameInterface {
+  roomName: string;
+  status: "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
+  userList: Player[];
+  voteList: Player["socketId"][];
+  timer: NodeJS.Timer;
+  targetPlayer?: Player["socketId"];
+}
+
 interface MessageResponse {
   type: "userNotice" | "gameNotice" | "voteNotice" | "mafiaChat" | "userChat";
   text: string;
@@ -37,6 +53,5 @@ interface MessageResponse {
 
 interface MessageRequest {
   text: string;
-  sender: string;
   receiver?: string;
 }

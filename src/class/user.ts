@@ -1,3 +1,5 @@
+import { Socket } from "socket.io";
+
 interface UserInterface {
   socketId: string;
   nickname?: string;
@@ -6,16 +8,42 @@ interface UserInterface {
 }
 
 export default class User implements UserInterface {
-  socketId: string;
+  private socket: Socket;
 
-  nickname?: string | undefined;
+  public socketId: string;
 
-  imgIdx = 0;
+  public nickname?: string | undefined;
 
-  currentRoomName: string;
+  public imgIdx = 0;
 
-  constructor({ socketId, currentRoomName }) {
+  public currentRoomName: string;
+
+  constructor({ socketId, currentRoomName, socket }) {
     this.socketId = socketId;
     this.currentRoomName = currentRoomName;
+    this.socket = socket;
+  }
+
+  setNickname(nickname: string) {
+    this.nickname = nickname;
+  }
+
+  setImgIdx(imgIdx: number) {
+    this.imgIdx = imgIdx;
+  }
+
+  setCurrentRoomName(roomName: string) {
+    this.currentRoomName = roomName;
+  }
+
+  joinRoom(roomName: string) {
+    this.leaveRoom();
+    this.socket.join(roomName);
+    this.currentRoomName = roomName;
+  }
+
+  leaveRoom() {
+    this.socket.leave(this.currentRoomName);
+    this.currentRoomName = "";
   }
 }
