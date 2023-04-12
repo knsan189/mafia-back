@@ -8,8 +8,6 @@ interface UserInterface {
 }
 
 export default class User implements UserInterface {
-  private socket: Socket;
-
   public id: string;
 
   public nickname?: string | undefined;
@@ -18,10 +16,9 @@ export default class User implements UserInterface {
 
   public currentRoomName: string;
 
-  constructor({ currentRoomName, socket }) {
-    this.id = socket.id;
+  constructor({ currentRoomName, id }) {
+    this.id = id;
     this.currentRoomName = currentRoomName;
-    this.socket = socket;
   }
 
   setNickname(nickname: string) {
@@ -36,14 +33,14 @@ export default class User implements UserInterface {
     this.currentRoomName = roomName;
   }
 
-  joinRoom(roomName: string) {
-    this.leaveRoom();
-    this.socket.join(roomName);
+  joinRoom(socket: Socket, roomName: string) {
+    this.leaveRoom(socket);
+    socket.join(roomName);
     this.currentRoomName = roomName;
   }
 
-  leaveRoom() {
-    this.socket.leave(this.currentRoomName);
+  leaveRoom(socket: Socket) {
+    socket.leave(this.currentRoomName);
     this.currentRoomName = "";
   }
 }

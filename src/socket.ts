@@ -28,8 +28,8 @@ const GameMap = new Map<string, Game>();
 io.on("connection", (socket) => {
   console.log("유저 소켓 아이디 :", socket.id);
   const tempRoom = `${createRoomName()}_temp`;
-  const newUser = new User({ currentRoomName: tempRoom, socket });
-  newUser.joinRoom(tempRoom);
+  const newUser = new User({ currentRoomName: tempRoom, id: socket.id });
+  newUser.joinRoom(socket, tempRoom);
   UserMap.set(socket.id, newUser);
 
   /** 유저 접속 종료시 */
@@ -37,8 +37,8 @@ io.on("connection", (socket) => {
     /** 유저 종료 처리 */
     const user = UserMap.get(socket.id);
     if (user) {
-      user.leaveRoom();
-      UserMap.delete(socket.id);
+      user.leaveRoom(socket);
+      UserMap.delete(user.id);
       /** 방 나가기 처리 */
       const room = RoomMap.get(user.currentRoomName);
       if (room) {
@@ -90,7 +90,7 @@ io.on("connection", (socket) => {
 
     if (!user || !room) throw new Error();
 
-    user.joinRoom(roomName);
+    user.joinRoom(socket, roomName);
     room.addUser(user.id);
 
     UserMap.set(socket.id, user);
