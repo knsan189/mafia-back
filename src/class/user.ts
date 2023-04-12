@@ -1,7 +1,7 @@
 import { Socket } from "socket.io";
 
 interface UserInterface {
-  socketId: string;
+  id: string;
   nickname?: string;
   imgIdx: number;
   currentRoomName: Room["roomName"];
@@ -10,7 +10,7 @@ interface UserInterface {
 export default class User implements UserInterface {
   private socket: Socket;
 
-  public socketId: string;
+  public id: string;
 
   public nickname?: string | undefined;
 
@@ -18,8 +18,8 @@ export default class User implements UserInterface {
 
   public currentRoomName: string;
 
-  constructor({ socketId, currentRoomName, socket }) {
-    this.socketId = socketId;
+  constructor({ currentRoomName, socket }) {
+    this.id = socket.id;
     this.currentRoomName = currentRoomName;
     this.socket = socket;
   }

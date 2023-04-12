@@ -28,7 +28,7 @@ const GameMap = new Map<string, Game>();
 io.on("connection", (socket) => {
   console.log("유저 소켓 아이디 :", socket.id);
   const tempRoom = `${createRoomName()}_temp`;
-  const newUser = new User({ socketId: socket.id, currentRoomName: tempRoom, socket });
+  const newUser = new User({ currentRoomName: tempRoom, socket });
   newUser.joinRoom(tempRoom);
   UserMap.set(socket.id, newUser);
 
@@ -44,7 +44,7 @@ io.on("connection", (socket) => {
     /** 방 나가기 처리 */
     const room = RoomMap.get(user.currentRoomName);
     if (!room) throw new Error();
-    room.removeUser(user.socketId);
+    room.removeUser(user.id);
     io.to(room.roomName).emit("userListSync", room.userList);
     io.to(room.roomName).emit("messageResponse", {
       type: "userNotice",
@@ -58,8 +58,8 @@ io.on("connection", (socket) => {
     if (!game) return;
     const newGame: Game = {
       ...game,
-      userList: game.userList.filter((player) => player.socketId !== user.socketId),
-      voteList: game.voteList.filter((player) => player !== user.socketId),
+      userList: game.userList.filter((player) => player.socketId !== user.id),
+      voteList: game.voteList.filter((player) => player !== user.id),
     };
     GameMap.set(room.roomName, newGame);
     io.to(room.roomName).emit("gameSync");
@@ -90,7 +90,7 @@ io.on("connection", (socket) => {
     if (!user || !room) throw new Error();
 
     user.joinRoom(roomName);
-    room.addUser(user.socketId);
+    room.addUser(user.id);
 
     UserMap.set(socket.id, user);
     RoomMap.set(roomName, room);
@@ -101,14 +101,11 @@ io.on("connection", (socket) => {
     });
 
     socket.emit("userListSync", response);
-
-    const messageResponse: MessageResponse = {
+    socket.emit("messageResponse", {
       type: "userNotice",
       sender: "Server",
       text: `${user.nickname}님이 입장하셨습니다.`,
-    };
-
-    socket.emit("messageResponse", messageResponse);
+    });
   });
 
   socket.on("gameReadyRequest", (isReady: boolean) => {
@@ -117,7 +114,7 @@ io.on("connection", (socket) => {
     const room = RoomMap.get(user.currentRoomName);
     if (!room) throw new Error();
 
-    room.editUser(user.socketId, isReady);
+    room.editUser(user.id, isReady);
     RoomMap.set(room.roomName, room);
     io.to(room.roomName).emit("gameReadySync", room);
   });
@@ -164,10 +161,9 @@ io.on("connection", (socket) => {
     socket.emit("messageResponse", messageResponse);
   });
 
-  socket.on("messageRequest", ({ text, receiver }: MessageRequest) => {
+  socket.on("messageRequest", ({ text }: MessageRequest) => {
     const user = UserMap.get(socket.id);
     if (!user) return;
-
     socket.broadcast
       .to(user.currentRoomName)
       .emit("messageResponse", { type: "userChat", text, sender: socket.id });
