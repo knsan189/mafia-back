@@ -1,21 +1,20 @@
 /* eslint-disable no-console */
+import { DefaultEventsMap } from "socket.io/dist/typed-events.js";
 import { instrument } from "@socket.io/admin-ui";
 import { Server } from "socket.io";
-import { jobList, timers } from "./config/const.config.js";
+import { timers } from "./config/const.config.js";
 import User from "./class/user.js";
 import Room from "./class/room.js";
+import Game from "./class/game.js";
+import { ServerToClientEvents } from "./@types/socket.js";
 
-const io = new Server({
+const io = new Server<DefaultEventsMap, ServerToClientEvents>({
   cors: {
     origin: "*",
   },
 });
 
 instrument(io, { auth: false, mode: "development" });
-
-function shuffle<T>(array: T[]) {
-  return array.sort(() => Math.random() - 0.5);
-}
 
 function createRoomName() {
   return Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
@@ -24,6 +23,15 @@ function createRoomName() {
 const UserMap = new Map<string, User>();
 const RoomMap = new Map<string, Room>();
 const GameMap = new Map<string, Game>();
+
+function getRoomUserList(room: Room) {
+  return room.userList.map((roomUser) => {
+    const userInfo = UserMap.get(roomUser.id);
+    return { ...roomUser, nickname: userInfo?.nickname || "", imgIdx: userInfo?.imgIdx || 0 };
+  });
+}
+
+const getNewId = () => Date.now().toString();
 
 io.on("connection", (socket) => {
   console.log("유저 소켓 아이디 :", socket.id);
@@ -43,23 +51,19 @@ io.on("connection", (socket) => {
       const room = RoomMap.get(user.currentRoomName);
       if (room) {
         room.removeUser(user.id);
-        io.to(room.roomName).emit("userListSync", room.userList);
+        io.to(room.roomName).emit("userListSync", getRoomUserList(room));
         io.to(room.roomName).emit("messageResponse", {
           type: "userNotice",
           sender: "server",
           text: `${user.nickname}님이 방을 나가셨습니다.`,
+          id: Date.now().toString(),
         });
         RoomMap.set(room.roomName, room);
 
         /** 게임 나가기 처리 */
         const game = GameMap.get(user.currentRoomName);
         if (game) {
-          const newGame: Game = {
-            ...game,
-            userList: game.userList.filter((player) => player.socketId !== user.id),
-            voteList: game.voteList.filter((player) => player !== user.id),
-          };
-          GameMap.set(room.roomName, newGame);
+          GameMap.set(room.roomName, game);
           io.to(room.roomName).emit("gameSync");
         }
       }
@@ -93,43 +97,34 @@ io.on("connection", (socket) => {
     user.joinRoom(socket, roomName);
     room.addUser(user.id);
 
-    UserMap.set(socket.id, user);
+    UserMap.set(user.id, user);
     RoomMap.set(roomName, room);
 
-    const response = room.userList.map((roomUser) => {
-      const userInfo = UserMap.get(roomUser.id);
-      return { ...roomUser, nickname: userInfo?.nickname, imgIdx: userInfo?.imgIdx };
-    });
-
-    socket.emit("userListSync", response);
+    socket.emit("userListSync", getRoomUserList(room));
     socket.emit("messageResponse", {
       type: "userNotice",
       sender: "Server",
       text: `${user.nickname}님이 입장하셨습니다.`,
+      id: getNewId(),
     });
   });
 
   socket.on("gameReadyRequest", (isReady: boolean) => {
     const user = UserMap.get(socket.id);
-    if (!user) throw new Error();
+    if (!user) return;
     const room = RoomMap.get(user.currentRoomName);
-    if (!room) throw new Error();
+    if (!room) return;
 
     room.editUser(user.id, isReady);
     RoomMap.set(room.roomName, room);
-    io.to(room.roomName).emit("gameReadySync", room);
+    io.to(room.roomName).emit("gameReadySync", getRoomUserList(room));
   });
 
   socket.on("gameStartRequest", () => {
     const user = UserMap.get(socket.id);
-    const room = RoomMap.get(user?.currentRoomName || "");
-    if (!user || !room) return;
-
-    const messageResponse: MessageResponse = {
-      type: "gameNotice",
-      sender: "Server",
-      text: `게임이 시작되었습니다.`,
-    };
+    if (!user) return;
+    const room = RoomMap.get(user?.currentRoomName);
+    if (!room) return;
 
     let timerIndex = 0;
     let { ms } = timers[timerIndex];
@@ -142,42 +137,28 @@ io.on("connection", (socket) => {
       ms -= 1000;
     }, 1000);
 
-    const newJobList = shuffle(jobList);
-
-    const playerList: Player[] = room.userList.map((roomUser, index) => ({
-      socketId: roomUser.id,
-      job: newJobList[index],
-      status: "alive",
-    }));
-
-    const newGame: Game = {
-      timer,
-      roomName: user.currentRoomName,
-      userList: playerList,
-      voteList: [],
-      ...timers[timerIndex],
-    };
+    const newGame = new Game({ roomName: room.roomName, roomUserList: room.userList });
 
     GameMap.set(user.currentRoomName, newGame);
-    socket.emit("messageResponse", messageResponse);
+
+    io.to(room.roomName).emit("messageResponse", {
+      type: "gameNotice",
+      sender: "Server",
+      text: "게임이 시작되었습니다.",
+      id: getNewId(),
+    });
   });
 
   socket.on("messageRequest", ({ text }: MessageRequest) => {
     const user = UserMap.get(socket.id);
     if (!user) return;
-    socket.broadcast
-      .to(user.currentRoomName)
-      .emit("messageResponse", { type: "userChat", text, sender: socket.id });
+    io.to(user.currentRoomName).emit("messageResponse", {
+      type: "userChat",
+      text,
+      sender: socket.id,
+      id: getNewId(),
+    });
   });
-
-  // // DM 수신 후 전송 (보낸 user, 받는 user both)
-  // socket.on("sendDM", (data) => {
-  //   io.to(`${data.to_id}`).to(`${data.from_id}`).emit("getDM", {
-  //     from_id: data.from_id,
-  //     to_id: data.to_id,
-  //     msg: data.msg,
-  //   });
-  // });
 
   // // 게임 시작 전,
   // // 방장 빼고 전원 ready 누르면 방장 gamestart 버튼 disabled=false
