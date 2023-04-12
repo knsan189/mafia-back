@@ -20,9 +20,9 @@ function createRoomName() {
   return Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
 }
 
-const UserMap = new Map<string, User>();
-const RoomMap = new Map<string, Room>();
-const GameMap = new Map<string, Game>();
+export const UserMap = new Map<string, User>();
+export const RoomMap = new Map<string, Room>();
+export const GameMap = new Map<string, Game>();
 
 function getRoomUserList(room: Room) {
   return room.userList.map((roomUser) => {
@@ -59,7 +59,6 @@ io.on("connection", (socket) => {
           id: Date.now().toString(),
         });
         RoomMap.set(room.roomName, room);
-
         /** 게임 나가기 처리 */
         const game = GameMap.get(user.currentRoomName);
         if (game) {
