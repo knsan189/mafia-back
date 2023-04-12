@@ -1,6 +1,6 @@
 import Room from "./room";
 import User from "./user";
-import io from "../socket";
+import io from "../socket.js";
 
 export interface Player {
   id: User["id"];
