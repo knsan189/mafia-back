@@ -100,8 +100,8 @@ io.on("connection", (socket) => {
     UserMap.set(user.id, user);
     RoomMap.set(roomName, room);
 
-    socket.emit("userListSync", getRoomUserList(room));
-    socket.emit("messageResponse", {
+    io.to(roomName).emit("userListSync", getRoomUserList(room));
+    io.to(roomName).emit("messageResponse", {
       type: "userNotice",
       sender: "Server",
       text: `${user.nickname}님이 입장하셨습니다.`,
@@ -133,7 +133,7 @@ io.on("connection", (socket) => {
         timerIndex += 1;
         ms = timers[timerIndex].ms;
       }
-      socket.emit("timerSync", ms);
+      io.to(room.roomName).emit("timerSync", ms);
       ms -= 1000;
     }, 1000);
 
