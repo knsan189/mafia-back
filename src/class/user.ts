@@ -1,3 +1,10 @@
+interface UserInterface {
+  socketId: string;
+  nickname?: string;
+  imgIdx: number;
+  currentRoomName: Room["roomName"];
+}
+
 export default class User implements UserInterface {
   socketId: string;
 

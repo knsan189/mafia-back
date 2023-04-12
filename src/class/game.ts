@@ -1,3 +1,12 @@
+interface GameInterface {
+  roomName: string;
+  status: "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
+  userList: Player[];
+  voteList: Player["socketId"][];
+  timer: NodeJS.Timer;
+  targetPlayer?: Player["socketId"];
+}
+
 export default class Game implements GameInterface {
   roomName: string;
 
