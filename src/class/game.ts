@@ -1,6 +1,8 @@
-import Room from "./room";
-import User from "./user";
-import io from "../socket.js";
+import Room from "./room.js";
+import User from "./user.js";
+import io, { GameMap } from "../socket.js";
+import Message from "./messsage.js";
+import { stageConfig } from "../config/const.config.js";
 
 export interface Player {
   id: User["id"];
@@ -10,19 +12,12 @@ export interface Player {
 
 export type GameStatus = "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
 
-interface GameConstructor {
-  roomName: Room["roomName"];
-  roomUserList: Room["userList"];
-}
-
-type JobType = "mafia" | "citizen";
+export type JobType = "mafia" | "citizen";
 
 export default class Game {
   roomName: string;
 
-  status: GameStatus = "night";
-
-  playerList: Player[];
+  playerList: Player[] = [];
 
   voteIdList: Player["id"][] = [];
 
@@ -39,25 +34,63 @@ export default class Game {
     "citizen",
   ];
 
-  // timer: NodeJS.Timer;
+  currentStage = 0;
 
-  constructor({ roomName, roomUserList }: GameConstructor) {
-    this.roomName = roomName;
-    this.shuffle();
-    this.playerList = roomUserList.map((user, index) => ({
+  currentStatus: GameStatus = "night";
+
+  remainingTime = 0;
+
+  timer?: NodeJS.Timer;
+
+  constructor(room: Room) {
+    this.roomName = room.roomName;
+
+    const message = new Message({ text: "직업 섞는중", type: "gameNotice" });
+    message.send(this.roomName);
+
+    this.jobList = this.jobList.sort(() => Math.random() - 0.5);
+    this.playerList = room.userList.map((user, index) => ({
       id: user.id,
       job: this.jobList[index],
       status: "alive",
     }));
   }
 
-  shuffle() {
-    io.to(this.roomName).emit("messageResponse", {
-      text: "직업 섞는중...",
-      sender: "Server",
-      type: "gameNotice",
-      id: Date.now().toString(),
-    });
-    this.jobList = this.jobList.sort(() => Math.random() - 0.5);
+  init() {
+    const second = 1000;
+    const message = new Message({ text: "게임이 시작되었습니다", type: "gameNotice" });
+    message.send(this.roomName);
+    this.setStage(this.currentStage);
+    this.timer = setInterval(() => {
+      if (this.remainingTime <= 0) {
+        this.setStage((this.currentStage += 1));
+      }
+      io.to(this.roomName).emit("timerSync", this.remainingTime);
+      this.remainingTime -= second;
+    }, second);
+  }
+
+  setStage(targetStage: number) {
+    const stageInfo = stageConfig[targetStage];
+    this.currentStage = targetStage;
+    this.currentStatus = stageInfo.status;
+    this.remainingTime = stageInfo.ms;
+    const message = new Message({ text: stageInfo.message, type: "gameNotice" });
+    message.send(this.roomName);
+    this.save();
+  }
+
+  removePlayer(id: Player["id"]) {
+    this.playerList = this.playerList.filter((player) => player.id !== id);
+    this.syncPlayerList();
+  }
+
+  save() {
+    GameMap.set(this.roomName, this);
+  }
+
+  syncPlayerList() {
+    this.save();
+    io.to(this.roomName).emit("playerListSync", this.playerList);
   }
 }

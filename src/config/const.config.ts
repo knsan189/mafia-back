@@ -1,15 +1,4 @@
-export const jobList: ("mafia" | "citizen")[] = [
-  "mafia",
-  "citizen",
-  "citizen",
-  "citizen",
-  "citizen",
-  "mafia",
-  "citizen",
-  "citizen",
-];
-
-export const timers: {
+export const stageConfig: {
   status: "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
   ms: number;
   message: string;

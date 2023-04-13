@@ -1,18 +1,13 @@
-import User from "../class/user";
-
-interface MessageResponse {
-  type: "userNotice" | "gameNotice" | "voteNotice" | "mafiaChat" | "userChat";
-  text: string;
-  sender: string;
-  id: string;
-}
+import { Player } from "../class/game.js";
+import Message from "../class/messsage.js";
+import User from "../class/user.js";
 
 interface ServerToClientEvents {
-  userListSync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
-  messageResponse: (response: MessageResponse) => void;
+  messageResponse: (response: Message) => void;
   saveUserInfoResponse: (user: User) => void;
   createRoomResponse: (roomName: string) => void;
   gameReadySync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
   timerSync: (ms: number) => void;
-  gameSync;
+  userListSync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
+  playerListSync: (players: Player[]) => void;
 }

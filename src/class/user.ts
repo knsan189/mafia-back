@@ -1,4 +1,5 @@
 import { Socket } from "socket.io";
+import { UserMap } from "../socket.js";
 
 interface UserInterface {
   id: string;
@@ -16,31 +17,35 @@ export default class User implements UserInterface {
 
   public currentRoomName: string;
 
-  constructor({ currentRoomName, id }) {
+  constructor(id: string) {
     this.id = id;
-    this.currentRoomName = currentRoomName;
+    this.currentRoomName = Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
   }
 
-  setNickname(nickname: string) {
+  editUser(nickname: string, imgIdx: number) {
     this.nickname = nickname;
-  }
-
-  setImgIdx(imgIdx: number) {
     this.imgIdx = imgIdx;
-  }
-
-  setCurrentRoomName(roomName: string) {
-    this.currentRoomName = roomName;
+    this.save();
   }
 
   joinRoom(socket: Socket, roomName: string) {
     this.leaveRoom(socket);
     socket.join(roomName);
     this.currentRoomName = roomName;
+    this.save();
   }
 
   leaveRoom(socket: Socket) {
     socket.leave(this.currentRoomName);
     this.currentRoomName = "";
+  }
+
+  save() {
+    UserMap.set(this.id, this);
+  }
+
+  disconnect(socket: Socket) {
+    this.leaveRoom(socket);
+    UserMap.delete(this.id);
   }
 }

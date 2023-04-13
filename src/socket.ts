@@ -2,11 +2,12 @@
 import { DefaultEventsMap } from "socket.io/dist/typed-events.js";
 import { instrument } from "@socket.io/admin-ui";
 import { Server } from "socket.io";
-import { timers } from "./config/const.config.js";
+
 import User from "./class/user.js";
 import Room from "./class/room.js";
 import Game from "./class/game.js";
 import { ServerToClientEvents } from "./@types/socket.js";
+import Message from "./class/messsage.js";
 
 const io = new Server<DefaultEventsMap, ServerToClientEvents>({
   cors: {
@@ -16,96 +17,53 @@ const io = new Server<DefaultEventsMap, ServerToClientEvents>({
 
 instrument(io, { auth: false, mode: "development" });
 
-function createRoomName() {
-  return Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
-}
-
-export const UserMap = new Map<string, User>();
-export const RoomMap = new Map<string, Room>();
-export const GameMap = new Map<string, Game>();
-
-function getRoomUserList(room: Room) {
-  return room.userList.map((roomUser) => {
-    const userInfo = UserMap.get(roomUser.id);
-    return { ...roomUser, nickname: userInfo?.nickname || "", imgIdx: userInfo?.imgIdx || 0 };
-  });
-}
-
-const getNewId = () => Date.now().toString();
+export const UserMap = new Map<User["id"], User>();
+export const RoomMap = new Map<Room["roomName"], Room>();
+export const GameMap = new Map<Game["roomName"], Game>();
 
 io.on("connection", (socket) => {
-  console.log("유저 소켓 아이디 :", socket.id);
-  const tempRoom = `${createRoomName()}_temp`;
-  const newUser = new User({ currentRoomName: tempRoom, id: socket.id });
-  newUser.joinRoom(socket, tempRoom);
-  UserMap.set(socket.id, newUser);
+  const newUser = new User(socket.id);
+  newUser.save();
 
-  /** 유저 접속 종료시 */
+  /** 사용자 접속 종료 */
   socket.on("disconnect", () => {
-    /** 유저 종료 처리 */
+    /** 사용자 삭제 처리 */
     const user = UserMap.get(socket.id);
-    if (user) {
-      user.leaveRoom(socket);
-      UserMap.delete(user.id);
-      /** 방 나가기 처리 */
-      const room = RoomMap.get(user.currentRoomName);
-      if (room) {
-        room.removeUser(user.id);
-        io.to(room.roomName).emit("userListSync", getRoomUserList(room));
-        io.to(room.roomName).emit("messageResponse", {
-          type: "userNotice",
-          sender: "server",
-          text: `${user.nickname}님이 방을 나가셨습니다.`,
-          id: Date.now().toString(),
-        });
-        RoomMap.set(room.roomName, room);
-        /** 게임 나가기 처리 */
-        const game = GameMap.get(user.currentRoomName);
-        if (game) {
-          GameMap.set(room.roomName, game);
-          io.to(room.roomName).emit("gameSync");
-        }
-      }
-    }
+    if (!user) return;
+    user.disconnect(socket);
+
+    /** 방 나가기 처리 */
+    const room = RoomMap.get(user.currentRoomName);
+    if (!room) return;
+    room.removeUser(user.id);
+
+    /** 게임 나가기 처리 */
+    const game = GameMap.get(user.currentRoomName);
+    if (!game) return;
+    game.removePlayer(user.id);
   });
 
+  /** 사용자 정보 변경 */
   socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
     const user = UserMap.get(socket.id);
     if (!user) return;
-    user.setImgIdx(imgIdx);
-    user.setNickname(nickname);
-    UserMap.set(socket.id, user);
-    io.to(newUser.currentRoomName).emit("saveUserInfoResponse", user);
+    user.editUser(nickname, imgIdx);
+    io.to(user.currentRoomName).emit("saveUserInfoResponse", user);
   });
 
   socket.on("createRoomRequest", () => {
     const user = UserMap.get(socket.id);
-    if (!user || !user.nickname) throw new Error();
+    if (!user) return;
     const newRoom = new Room();
-    console.log("방 생성", newRoom);
-    RoomMap.set(newRoom.roomName, newRoom);
     io.to(user.currentRoomName).emit("createRoomResponse", newRoom.roomName);
   });
 
   socket.on("joinRoomRequest", (roomName: string) => {
     const user = UserMap.get(socket.id);
     const room = RoomMap.get(roomName);
-
-    if (!user || !room) throw new Error();
-
+    if (!user || !room) return;
     user.joinRoom(socket, roomName);
     room.addUser(user.id);
-
-    UserMap.set(user.id, user);
-    RoomMap.set(roomName, room);
-
-    io.to(roomName).emit("userListSync", getRoomUserList(room));
-    io.to(roomName).emit("messageResponse", {
-      type: "userNotice",
-      sender: "Server",
-      text: `${user.nickname}님이 입장하셨습니다.`,
-      id: getNewId(),
-    });
   });
 
   socket.on("gameReadyRequest", (isReady: boolean) => {
@@ -113,50 +71,23 @@ io.on("connection", (socket) => {
     if (!user) return;
     const room = RoomMap.get(user.currentRoomName);
     if (!room) return;
-
     room.editUser(user.id, isReady);
-    RoomMap.set(room.roomName, room);
-    io.to(room.roomName).emit("gameReadySync", getRoomUserList(room));
   });
 
   socket.on("gameStartRequest", () => {
     const user = UserMap.get(socket.id);
     if (!user) return;
-    const room = RoomMap.get(user?.currentRoomName);
+    const room = RoomMap.get(user.currentRoomName);
     if (!room) return;
-
-    let timerIndex = 0;
-    let { ms } = timers[timerIndex];
-    const timer = setInterval(() => {
-      if (ms <= 0) {
-        timerIndex += 1;
-        ms = timers[timerIndex].ms;
-      }
-      io.to(room.roomName).emit("timerSync", ms);
-      ms -= 1000;
-    }, 1000);
-
-    const newGame = new Game({ roomName: room.roomName, roomUserList: room.userList });
-
-    GameMap.set(user.currentRoomName, newGame);
-
-    io.to(room.roomName).emit("messageResponse", {
-      type: "gameNotice",
-      sender: "Server",
-      text: "게임이 시작되었습니다.",
-      id: getNewId(),
-    });
+    const newGame = new Game(room);
+    newGame.init();
   });
 
   socket.on("messageRequest", ({ text }: MessageRequest) => {
     const user = UserMap.get(socket.id);
     if (!user) return;
-    io.to(user.currentRoomName).emit("messageResponse", {
-      type: "userChat",
-      text,
-      sender: socket.id,
-      id: getNewId(),
-    });
+    const message = new Message({ type: "userChat", text, sender: user.nickname });
+    message.send(user.currentRoomName);
   });
 
   // // 게임 시작 전,
