@@ -6,7 +6,7 @@ interface ServerToClientEvents {
   messageResponse: (response: Message) => void;
   saveUserInfoResponse: (user: User) => void;
   createRoomResponse: (roomName: string) => void;
-  gameReadySync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
+  gameStartResponse: (player: Player[]) => void;
   timerSync: (ms: number) => void;
   userListSync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
   playerListSync: (players: Player[]) => void;

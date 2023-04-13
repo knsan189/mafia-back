@@ -44,10 +44,6 @@ export default class Game {
 
   constructor(room: Room) {
     this.roomName = room.roomName;
-
-    const message = new Message({ text: "직업 섞는중", type: "gameNotice" });
-    message.send(this.roomName);
-
     this.jobList = this.jobList.sort(() => Math.random() - 0.5);
     this.playerList = room.userList.map((user, index) => ({
       id: user.id,
@@ -58,8 +54,6 @@ export default class Game {
 
   init() {
     const second = 1000;
-    const message = new Message({ text: "게임이 시작되었습니다", type: "gameNotice" });
-    message.send(this.roomName);
     this.setStage(this.currentStage);
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
@@ -83,6 +77,7 @@ export default class Game {
   removePlayer(id: Player["id"]) {
     this.playerList = this.playerList.filter((player) => player.id !== id);
     this.syncPlayerList();
+    this.save();
   }
 
   save() {
@@ -90,7 +85,6 @@ export default class Game {
   }
 
   syncPlayerList() {
-    this.save();
     io.to(this.roomName).emit("playerListSync", this.playerList);
   }
 }

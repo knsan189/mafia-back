@@ -81,7 +81,11 @@ io.on("connection", (socket) => {
     if (!user) return;
     const room = RoomMap.get(user.currentRoomName);
     if (!room) return;
+
     const newGame = new Game(room);
+    const message = new Message({ text: "게임이 잠시 후 시작됩니다.", type: "gameNotice" });
+    message.send(newGame.roomName);
+    io.to(newGame.roomName).emit("gameStartResponse", newGame.playerList);
     newGame.init();
   });
 
