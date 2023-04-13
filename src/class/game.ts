@@ -10,7 +10,13 @@ export interface Player {
   status: "alive" | "dead";
 }
 
-export type GameStatus = "night" | "dayDiscussion" | "dayVote" | "dayFinal" | "dayFinalVote";
+export type GameStatus =
+  | "night"
+  | "dayDiscussion"
+  | "dayVote"
+  | "dayFinal"
+  | "dayFinalVote"
+  | "end";
 
 export type JobType = "mafia" | "citizen";
 
@@ -71,13 +77,12 @@ export default class Game {
     this.remainingTime = stageInfo.ms;
     const message = new Message({ text: stageInfo.message, type: "gameNotice" });
     message.send(this.roomName);
-    this.save();
+    this.gameStatusSync();
   }
 
   removePlayer(id: Player["id"]) {
     this.playerList = this.playerList.filter((player) => player.id !== id);
     this.syncPlayerList();
-    this.save();
   }
 
   save() {
@@ -86,5 +91,11 @@ export default class Game {
 
   syncPlayerList() {
     io.to(this.roomName).emit("playerListSync", this.playerList);
+    this.save();
+  }
+
+  gameStatusSync() {
+    io.to(this.roomName).emit("gameStatusSync", this.currentStatus);
+    this.save();
   }
 }

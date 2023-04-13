@@ -1,4 +1,4 @@
-import { Player } from "../class/game.js";
+import { GameStatus, Player } from "../class/game.js";
 import Message from "../class/messsage.js";
 import User from "../class/user.js";
 
@@ -10,4 +10,5 @@ interface ServerToClientEvents {
   timerSync: (ms: number) => void;
   userListSync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
   playerListSync: (players: Player[]) => void;
+  gameStatusSync: (status: GameStatus) => void;
 }
