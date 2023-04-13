@@ -19,7 +19,9 @@ export default class User implements UserInterface {
 
   constructor(id: string) {
     this.id = id;
-    this.currentRoomName = Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
+    this.currentRoomName = `${Math.floor(
+      Math.random() * 1000 + new Date().getTime(),
+    ).toString()}_temp`;
   }
 
   editUser(nickname: string, imgIdx: number) {
