@@ -23,7 +23,8 @@ export const GameMap = new Map<Game["roomName"], Game>();
 
 io.on("connection", (socket) => {
   const newUser = new User(socket.id);
-  newUser.save();
+  const tempRoom = `${Math.floor(Math.random() * 1000 + new Date().getTime()).toString()}_temp`;
+  newUser.joinRoom(socket, tempRoom);
 
   /** 사용자 접속 종료 */
   socket.on("disconnect", () => {
