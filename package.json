@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nodemon --exec ts-node --files bin/www.ts",
+    "dev": "nodemon --exec ts-node --files src/bin/www.ts",
     "build": "tsc",
     "start": "node dist/bin/www.js"
   },

@@ -9,7 +9,7 @@
 import Debug from "debug";
 import * as http from "http";
 import process from "process";
-import io from "../src/socket.js";
+import io from "../socket.js";
 import app from "../app.js";
 
 const debug = Debug("mafiaBack");
@@ -37,16 +37,16 @@ const server = http.createServer(app);
  */
 
 function normalizePort(val: any) {
-  const port = parseInt(val, 10);
+  const p = parseInt(val, 10);
 
-  if (isNaN(port)) {
+  if (Number.isNaN(p)) {
     // named pipe
     return val;
   }
 
-  if (port >= 0) {
+  if (p >= 0) {
     // port number
-    return port;
+    return p;
   }
 
   return false;
