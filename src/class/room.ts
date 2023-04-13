@@ -22,7 +22,6 @@ export default class Room implements RoomInterface {
   addUser(id: string) {
     this.userList = [...this.userList, { id, isReady: false }];
     this.save();
-
     const user = UserMap.get(id);
     const message = new Message({ text: `${user?.nickname}님이 입장하셨습니다.` });
     message.send(this.roomName);
@@ -36,7 +35,6 @@ export default class Room implements RoomInterface {
   removeUser(id: string) {
     this.userList = this.userList.filter((user) => user.id !== id);
     this.save();
-
     const user = UserMap.get(id);
     const message = new Message({ text: `${user?.nickname}님이 방을 나가셨습니다.` });
     message.send(this.roomName);

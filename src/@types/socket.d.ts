@@ -11,4 +11,5 @@ interface ServerToClientEvents {
   userListSync: (userList: { nickname: string; imgIdx: number; id: string }[]) => void;
   playerListSync: (players: Player[]) => void;
   gameStatusSync: (status: GameStatus) => void;
+  targetPlayerSync: (playerId: Player["id"]) => void;
 }

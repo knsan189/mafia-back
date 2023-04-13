@@ -81,19 +81,26 @@ io.on("connection", (socket) => {
     if (!user) return;
     const room = RoomMap.get(user.currentRoomName);
     if (!room) return;
-
     const newGame = new Game(room);
-    const message = new Message({ text: "게임이 잠시 후 시작됩니다.", type: "gameNotice" });
-    message.send(newGame.roomName);
     io.to(newGame.roomName).emit("gameStartResponse", newGame.playerList);
     newGame.init();
   });
 
-  socket.on("messageRequest", ({ text }: MessageRequest) => {
+  socket.on("messageRequest", ({ text }) => {
     const user = UserMap.get(socket.id);
     if (!user) return;
     const message = new Message({ type: "userChat", text, sender: user.nickname });
     message.send(user.currentRoomName);
+  });
+
+  socket.on("mafiaTargetRequest", (targetId: string) => {
+    const user = UserMap.get(socket.id);
+    if (!user) return;
+    const game = GameMap.get(user.currentRoomName);
+    if (!game) return;
+    const player = game.playerList.find((p) => p.id === socket.id);
+    if (player?.job !== "mafia") return;
+    game.setTargetPlayer(targetId);
   });
 
   // // 게임 시작 전,

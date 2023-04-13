@@ -1,6 +1,6 @@
 import Room from "./room.js";
 import User from "./user.js";
-import io, { GameMap } from "../socket.js";
+import io, { GameMap, UserMap } from "../socket.js";
 import Message from "./messsage.js";
 import { stageConfig } from "../config/const.config.js";
 
@@ -27,7 +27,7 @@ export default class Game {
 
   voteIdList: Player["id"][] = [];
 
-  targetPlayer?: string | undefined;
+  targetPlayer: Player["id"] = "";
 
   jobList: JobType[] = [
     "mafia",
@@ -56,6 +56,8 @@ export default class Game {
       job: this.jobList[index],
       status: "alive",
     }));
+    const message = new Message({ text: "게임이 잠시 후 시작됩니다.", type: "gameNotice" });
+    message.send(this.roomName);
   }
 
   init() {
@@ -63,11 +65,25 @@ export default class Game {
     this.setStage(this.currentStage);
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
+        this.gameEvent();
         this.setStage((this.currentStage += 1));
       }
       io.to(this.roomName).emit("timerSync", this.remainingTime);
       this.remainingTime -= second;
     }, second);
+  }
+
+  gameEvent() {
+    switch (this.currentStatus) {
+      case "night": {
+        if (this.targetPlayer) {
+          this.killPlayer(this.targetPlayer);
+        }
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   setStage(targetStage: number) {
@@ -80,22 +96,48 @@ export default class Game {
     this.gameStatusSync();
   }
 
+  setTargetPlayer(id: Player["id"]) {
+    this.targetPlayer = id;
+  }
+
   removePlayer(id: Player["id"]) {
     this.playerList = this.playerList.filter((player) => player.id !== id);
-    this.syncPlayerList();
+    this.playerListSync();
+  }
+
+  killPlayer(id: Player["id"]) {
+    this.playerList = this.playerList.map((player) =>
+      player.id === id ? { ...player, status: "dead" } : player,
+    );
+    this.playerListSync();
+    const targetUser = UserMap.get(id);
+    const message = new Message({
+      text: `${targetUser?.nickname}님이 사망하셨습니다.`,
+      type: "gameNotice",
+    });
+    message.send(this.roomName);
   }
 
   save() {
     GameMap.set(this.roomName, this);
   }
 
-  syncPlayerList() {
+  delete() {
+    GameMap.delete(this.roomName);
+  }
+
+  playerListSync() {
     io.to(this.roomName).emit("playerListSync", this.playerList);
     this.save();
   }
 
   gameStatusSync() {
     io.to(this.roomName).emit("gameStatusSync", this.currentStatus);
+    this.save();
+  }
+
+  targetPlayerSync() {
+    io.to(this.roomName).emit("targetPlayerSync", this.targetPlayer);
     this.save();
   }
 }
