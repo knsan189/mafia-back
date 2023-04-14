@@ -66,8 +66,10 @@ export default class Game {
     this.setStage(this.currentStage);
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
+        let targetStage = this.currentStage + 1;
+        if (targetStage === stageConfig.length) targetStage = 0;
         this.gameEvent();
-        this.setStage((this.currentStage += 1));
+        this.setStage(targetStage);
       }
       io.to(this.roomName).emit("timerSync", this.remainingTime);
       this.remainingTime -= second;
