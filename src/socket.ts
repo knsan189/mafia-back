@@ -41,7 +41,7 @@ io.on("connection", (socket) => {
     /** 사용자 정보 변경 */
     socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
       const user = new User({ id: socket.id, nickname, imgIdx });
-      socket.to(socket.id).emit("saveUserInfoResponse", user);
+      socket.emit("saveUserInfoResponse", user);
     });
 
     socket.on("createRoomRequest", () => {
