@@ -22,9 +22,6 @@ export const GameMap = new Map<Game["roomName"], Game>();
 
 io.on("connection", (socket) => {
   try {
-    const newUser = new User(socket.id);
-    const tempRoom = `${Math.floor(Math.random() * 1000 + new Date().getTime()).toString()}_temp`;
-    newUser.joinRoom(socket, tempRoom);
     /** 사용자 접속 종료 */
     socket.on("disconnect", () => {
       const user = UserMap.get(socket.id);
@@ -43,10 +40,8 @@ io.on("connection", (socket) => {
 
     /** 사용자 정보 변경 */
     socket.on("saveUserInfoRequest", (nickname: string, imgIdx: number) => {
-      const user = UserMap.get(socket.id);
-      if (!user) return;
-      user.editUser(nickname, imgIdx);
-      io.to(user.currentRoomName).emit("saveUserInfoResponse", user);
+      const user = new User({ id: socket.id, nickname, imgIdx });
+      socket.emit("saveUserInfoResponse", user);
     });
 
     socket.on("createRoomRequest", () => {
@@ -59,7 +54,7 @@ io.on("connection", (socket) => {
     socket.on("joinRoomRequest", (roomName: string) => {
       const user = UserMap.get(socket.id);
       const room = RoomMap.get(roomName);
-      if (!user || !user.nickname || !room) return;
+      if (!user || !room) return;
       user.joinRoom(socket, roomName);
       room.addUser(user.id, user.nickname);
     });

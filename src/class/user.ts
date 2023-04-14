@@ -2,28 +2,27 @@ import { Socket } from "socket.io";
 import { UserMap } from "../socket.js";
 import MaifaLog from "../utils/log.js";
 
-interface UserInterface {
+interface UserConstructor {
   id: string;
-  nickname?: string;
+  nickname: string;
   imgIdx: number;
-  currentRoomName: Room["roomName"];
 }
 
-export default class User implements UserInterface {
+export default class User {
   public id: string;
 
-  public nickname?: string | undefined;
+  public nickname: string;
 
-  public imgIdx = 0;
+  public imgIdx: number = 0;
 
-  public currentRoomName: string;
+  public currentRoomName: string = "";
 
-  constructor(id: string) {
+  constructor({ id, nickname, imgIdx }: UserConstructor) {
     this.id = id;
-    this.currentRoomName = `${Math.floor(
-      Math.random() * 1000 + new Date().getTime(),
-    ).toString()}_temp`;
-    this.log("신규 접속");
+    this.nickname = nickname;
+    this.imgIdx = imgIdx;
+    this.save();
+    this.log("신규 생성");
   }
 
   editUser(nickname: string, imgIdx: number) {
