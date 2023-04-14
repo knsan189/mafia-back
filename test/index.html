@@ -14,7 +14,7 @@
     ></script>
     <script>
       const socket = io("http://knsan189.iptime.org:4001");
-      socket.emit("saveUserInfoRequest", "test", 0);
+      socket.emit("saveUserInfoRequest", "aaabb", 0);
       socket.on("saveUserInfoResponse", (user) => {
         console.log(user);
       });

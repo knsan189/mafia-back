@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
       const user = UserMap.get(socket.id);
       if (!user) return;
       const newRoom = new Room();
-      io.to(user.currentRoomName).emit("createRoomResponse", newRoom.roomName);
+      socket.emit("createRoomResponse", newRoom.roomName);
     });
 
     socket.on("joinRoomRequest", (roomName: string) => {
