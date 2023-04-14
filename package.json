@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon --exec ts-node --files src/bin/www.ts",
-    "build": "tsc",
+    "build": "tsc && cp -r src/views/ dist/src",
     "start": "node dist/bin/www.js"
   },
   "dependencies": {
