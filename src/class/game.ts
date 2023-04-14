@@ -1,8 +1,9 @@
 import Room from "./room.js";
 import User from "./user.js";
 import io, { GameMap, UserMap } from "../socket.js";
-import Message from "./messsage.js";
+import { sendMessage } from "../utils/messsage.js";
 import { stageConfig } from "../config/const.config.js";
+import MaifaLog from "../utils/log.js";
 
 export interface Player {
   id: User["id"];
@@ -56,8 +57,8 @@ export default class Game {
       job: this.jobList[index],
       status: "alive",
     }));
-    const message = new Message({ text: "게임이 잠시 후 시작됩니다.", type: "gameNotice" });
-    message.send(this.roomName);
+    this.notify("게임이 잠시 후 시작 됩니다.");
+    this.log("생성");
   }
 
   init() {
@@ -71,6 +72,7 @@ export default class Game {
       io.to(this.roomName).emit("timerSync", this.remainingTime);
       this.remainingTime -= second;
     }, second);
+    this.log("게임 시작");
   }
 
   gameEvent() {
@@ -91,9 +93,9 @@ export default class Game {
     this.currentStage = targetStage;
     this.currentStatus = stageInfo.status;
     this.remainingTime = stageInfo.ms;
-    const message = new Message({ text: stageInfo.message, type: "gameNotice" });
-    message.send(this.roomName);
     this.gameStatusSync();
+    this.notify(stageInfo.message);
+    this.log("스테이지 변경");
   }
 
   setTargetPlayer(id: Player["id"]) {
@@ -111,11 +113,7 @@ export default class Game {
     );
     this.playerListSync();
     const targetUser = UserMap.get(id);
-    const message = new Message({
-      text: `${targetUser?.nickname}님이 사망하셨습니다.`,
-      type: "gameNotice",
-    });
-    message.send(this.roomName);
+    this.notify(`${targetUser?.nickname}님이 사망하셨습니다.`);
   }
 
   save() {
@@ -139,5 +137,13 @@ export default class Game {
   targetPlayerSync() {
     io.to(this.roomName).emit("targetPlayerSync", this.targetPlayer);
     this.save();
+  }
+
+  log(...text: string[]) {
+    MaifaLog(`[게임 ${[this.roomName]}]`, ...text);
+  }
+
+  notify(text: string) {
+    sendMessage(this.roomName, { text, type: "gameNotice" });
   }
 }

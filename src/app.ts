@@ -1,9 +1,17 @@
+/* eslint-disable no-underscore-dangle */
 import cors from "cors";
+import path from "path";
 import createError from "http-errors";
 import express from "express";
 import cookieParser from "cookie-parser";
+import { fileURLToPath } from "url";
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.set("views", path.join(__dirname, "src/views"));
 app.set("view engine", "pug");
 app.use(cors());
 app.use(express.json());

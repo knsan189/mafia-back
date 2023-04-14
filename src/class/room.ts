@@ -1,5 +1,6 @@
 import io, { RoomMap, UserMap } from "../socket.js";
-import Message from "./messsage.js";
+import MaifaLog from "../utils/log.js";
+import { sendMessage } from "../utils/messsage.js";
 
 interface RoomInterface {
   roomName: string;
@@ -17,27 +18,27 @@ export default class Room implements RoomInterface {
   constructor() {
     this.roomName = Math.floor(Math.random() * 1000 + new Date().getTime()).toString();
     this.save();
+    this.log("생성");
   }
 
-  addUser(id: string) {
+  addUser(id: string, nickname: string) {
     this.userList = [...this.userList, { id, isReady: false }];
     this.save();
-    const user = UserMap.get(id);
-    const message = new Message({ text: `${user?.nickname}님이 입장하셨습니다.` });
-    message.send(this.roomName);
+    this.notify(`${nickname}님이 입장했습니다.`);
+    this.log(`유저 ${id} 입장`);
   }
 
   editUser(id: string, isReady: boolean) {
     this.userList = this.userList.map((user) => (user.id !== id ? user : { ...user, isReady }));
     this.save();
+    this.log(`유저 ${id}`, isReady ? "레디 완료" : "레디 해제");
   }
 
-  removeUser(id: string) {
+  removeUser(id: string, nickname: string) {
     this.userList = this.userList.filter((user) => user.id !== id);
     this.save();
-    const user = UserMap.get(id);
-    const message = new Message({ text: `${user?.nickname}님이 방을 나가셨습니다.` });
-    message.send(this.roomName);
+    this.notify(`${nickname}님이 퇴장했습니다.`);
+    this.log(`유저 ${id} 방 나감`);
   }
 
   save() {
@@ -54,5 +55,13 @@ export default class Room implements RoomInterface {
       const userInfo = UserMap.get(roomUser.id);
       return { ...roomUser, nickname: userInfo?.nickname || "", imgIdx: userInfo?.imgIdx || 0 };
     });
+  }
+
+  log(...text: string[]) {
+    MaifaLog(`[방 ${[this.roomName]}]`, ...text);
+  }
+
+  notify(text: string) {
+    sendMessage(this.roomName, { text });
   }
 }

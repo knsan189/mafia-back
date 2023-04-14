@@ -1,8 +1,9 @@
 import { GameStatus, Player } from "../class/game.js";
-import Message from "../class/messsage.js";
+import { Message } from "../utils/messsage.js";
 import User from "../class/user.js";
 
 interface ServerToClientEvents {
+  error: (message: string) => void;
   messageResponse: (response: Message) => void;
   saveUserInfoResponse: (user: User) => void;
   createRoomResponse: (roomName: string) => void;
