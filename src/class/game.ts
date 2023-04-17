@@ -104,6 +104,7 @@ export default class Game {
 
   setTargetPlayer(id: Player["id"]) {
     this.targetPlayer = id;
+    this.targetPlayerSync();
     this.log("지목 대상 변경", id);
   }
 
@@ -120,8 +121,8 @@ export default class Game {
     this.playerListSync();
     const targetUser = UserMap.get(id);
     this.notify(`${targetUser?.nickname}님이 사망하셨습니다.`);
-    this.targetPlayer = "";
-    this.targetPlayerSync();
+    this.log(id, "죽음");
+    this.setTargetPlayer("");
   }
 
   checkGameover() {
