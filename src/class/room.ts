@@ -4,14 +4,14 @@ import { sendMessage } from "../utils/messsage.js";
 
 interface RoomInterface {
   roomName: string;
-  status: "idle" | "play";
+  status: "idle" | "playing";
   userList: { id: User["socketId"]; isReady: boolean }[];
 }
 
 export default class Room implements RoomInterface {
   roomName: string;
 
-  status: "idle" | "play" = "idle";
+  status: "idle" | "playing" = "idle";
 
   userList: { id: string; isReady: boolean }[] = [];
 
@@ -47,6 +47,12 @@ export default class Room implements RoomInterface {
 
   startGame() {
     this.userList = this.userList.map((user) => ({ ...user, isReady: false }));
+    this.status = "playing";
+    this.save();
+  }
+
+  endGame() {
+    this.status = "idle";
     this.save();
   }
 

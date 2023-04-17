@@ -5,7 +5,10 @@ import User from "../class/user.js";
 interface ServerToClientEvents {
   error: (message: string) => void;
   messageResponse: (response: Message) => void;
+
+  /** 사용자 정보 수정 응답 */
   saveUserInfoResponse: (user: User) => void;
+
   createRoomResponse: (roomName: string) => void;
   gameStartResponse: (player: Player[]) => void;
   timerSync: (ms: number) => void;

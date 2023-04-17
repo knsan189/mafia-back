@@ -1,6 +1,6 @@
 import Room from "./room.js";
 import User from "./user.js";
-import io, { GameMap, UserMap } from "../socket.js";
+import io, { GameMap, RoomMap, UserMap } from "../socket.js";
 import { sendMessage } from "../utils/messsage.js";
 import { stageConfig } from "../config/const.config.js";
 import MaifaLog from "../utils/log.js";
@@ -57,6 +57,7 @@ export default class Game {
       job: this.jobList[index],
       status: "alive",
     }));
+    room.startGame();
     this.notify("게임이 잠시 후 시작 됩니다.");
     this.log("생성");
   }
@@ -79,6 +80,7 @@ export default class Game {
 
   gameEvent() {
     switch (this.currentStatus) {
+      /** 밤이 끝났을때 */
       case "night": {
         if (this.targetPlayer) {
           this.killPlayer(this.targetPlayer);
@@ -108,7 +110,7 @@ export default class Game {
   removePlayer(id: Player["id"]) {
     this.playerList = this.playerList.filter((player) => player.id !== id);
     this.playerListSync();
-    this.checkGameIsOver();
+    this.checkGameover();
   }
 
   killPlayer(id: Player["id"]) {
@@ -118,22 +120,27 @@ export default class Game {
     this.playerListSync();
     const targetUser = UserMap.get(id);
     this.notify(`${targetUser?.nickname}님이 사망하셨습니다.`);
+    this.targetPlayer = "";
+    this.targetPlayerSync();
   }
 
-  checkGameIsOver() {
+  checkGameover() {
     let mafiaCount = 0;
     this.playerList.forEach((player) => {
       if (player.job === "mafia") mafiaCount += 1;
     });
 
     if (mafiaCount === 0) {
-      this.clear();
-      this.notify("마피아가 승리했습니다.");
+      this.gameover();
+      this.notify("마피아가 모두 죽어 시민이 승리했습니다.");
     }
   }
 
-  clear() {
+  gameover() {
     clearInterval(this.timer);
+    const room = RoomMap.get(this.roomName);
+    room?.endGame();
+    this.notify("게임 종료");
     this.delete();
   }
 
@@ -143,7 +150,6 @@ export default class Game {
 
   delete() {
     GameMap.delete(this.roomName);
-    this.notify("게임 종료");
   }
 
   playerListSync() {

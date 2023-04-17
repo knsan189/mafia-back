@@ -5,7 +5,7 @@ import User from "./class/user.js";
 import Room from "./class/room.js";
 import Game from "./class/game.js";
 import { ServerToClientEvents } from "./@types/socket.js";
-import { sendMessage } from "./utils/messsage.js";
+import { MessageType, sendMessage } from "./utils/messsage.js";
 import MaifaLog from "./utils/log.js";
 
 const io = new Server<DefaultEventsMap, ServerToClientEvents>({
@@ -64,16 +64,22 @@ io.on("connection", (socket) => {
       if (!user) return;
       const room = RoomMap.get(user.currentRoomName);
       if (!room) return;
-      room.startGame();
       const newGame = new Game(room);
       io.to(newGame.roomName).emit("gameStartResponse", newGame.playerList);
       newGame.init();
     });
 
     socket.on("messageRequest", ({ text }) => {
+      let type: MessageType = "userChat";
       const user = UserMap.get(socket.id);
       if (!user) return;
-      sendMessage(user.currentRoomName, { type: "userChat", text, sender: user.nickname });
+      const game = GameMap.get(user.currentRoomName);
+
+      if (game?.currentStatus === "night") {
+        type = "mafiaChat";
+      }
+
+      sendMessage(user.currentRoomName, { type, text, sender: user.nickname });
     });
 
     socket.on("mafiaTargetRequest", (targetId: string) => {
