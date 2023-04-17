@@ -39,6 +39,15 @@ export default class Room implements RoomInterface {
     this.save();
     this.notify(`${nickname}님이 퇴장했습니다.`);
     this.log(`유저 ${id} 방 나감`);
+
+    if (this.userList.length === 0) {
+      this.delete();
+    }
+  }
+
+  startGame() {
+    this.userList = this.userList.map((user) => ({ ...user, isReady: false }));
+    this.save();
   }
 
   save() {
@@ -48,6 +57,7 @@ export default class Room implements RoomInterface {
 
   delete() {
     RoomMap.delete(this.roomName);
+    this.notify("방 삭제");
   }
 
   getRoomUserList() {

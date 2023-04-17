@@ -1,5 +1,5 @@
 import { Socket } from "socket.io";
-import { UserMap } from "../socket.js";
+import { GameMap, RoomMap, UserMap } from "../socket.js";
 import MaifaLog from "../utils/log.js";
 
 interface UserConstructor {
@@ -33,7 +33,6 @@ export default class User {
   }
 
   joinRoom(socket: Socket, roomName: string) {
-    this.leaveRoom(socket);
     socket.join(roomName);
     this.currentRoomName = roomName;
     this.save();
@@ -50,9 +49,17 @@ export default class User {
     UserMap.set(this.id, this);
   }
 
-  disconnect(socket: Socket) {
-    this.leaveRoom(socket);
+  delete() {
     UserMap.delete(this.id);
+  }
+
+  disconnect(socket: Socket) {
+    const room = RoomMap.get(this.currentRoomName);
+    const game = GameMap.get(this.currentRoomName);
+    game?.removePlayer(this.id);
+    room?.removeUser(this.id, this.nickname);
+    this.leaveRoom(socket);
+    this.delete();
     this.log(`'${this.currentRoomName}' 접속 해제`);
   }
 

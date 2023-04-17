@@ -97,7 +97,7 @@ export default class Game {
     this.remainingTime = stageInfo.ms;
     this.gameStatusSync();
     this.notify(stageInfo.message);
-    this.log("스테이지 변경");
+    this.log("스테이지", stageInfo.status, stageInfo.message);
   }
 
   setTargetPlayer(id: Player["id"]) {
@@ -118,12 +118,30 @@ export default class Game {
     this.notify(`${targetUser?.nickname}님이 사망하셨습니다.`);
   }
 
+  checkGameIsOver() {
+    let mafiaCount = 0;
+    this.playerList.forEach((player) => {
+      if (player.job === "mafia") mafiaCount += 1;
+    });
+
+    if (mafiaCount === 0) {
+      this.clear();
+      this.notify("마피아가 승리했습니다.");
+    }
+  }
+
+  clear() {
+    clearInterval(this.timer);
+    this.delete();
+  }
+
   save() {
     GameMap.set(this.roomName, this);
   }
 
   delete() {
     GameMap.delete(this.roomName);
+    this.notify("게임 종료");
   }
 
   playerListSync() {

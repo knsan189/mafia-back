@@ -25,17 +25,7 @@ io.on("connection", (socket) => {
     /** 사용자 접속 종료 */
     socket.on("disconnect", () => {
       const user = UserMap.get(socket.id);
-      if (user) {
-        const room = RoomMap.get(user.currentRoomName);
-        if (room && user.nickname) {
-          const game = GameMap.get(room.roomName);
-          if (game) {
-            game.removePlayer(user.id);
-          }
-          room.removeUser(user.id, user.nickname);
-        }
-        user.disconnect(socket);
-      }
+      user?.disconnect(socket);
     });
 
     /** 사용자 정보 변경 */
@@ -44,13 +34,15 @@ io.on("connection", (socket) => {
       socket.emit("saveUserInfoResponse", user);
     });
 
+    /** 방 만들기 요청 */
     socket.on("createRoomRequest", () => {
       const user = UserMap.get(socket.id);
-      if (!user) return;
+      if (!user) throw new Error("유저가 존재하지 않습니다.");
       const newRoom = new Room();
       socket.emit("createRoomResponse", newRoom.roomName);
     });
 
+    /** 방 입장 요청 */
     socket.on("joinRoomRequest", (roomName: string) => {
       const user = UserMap.get(socket.id);
       const room = RoomMap.get(roomName);
@@ -72,6 +64,7 @@ io.on("connection", (socket) => {
       if (!user) return;
       const room = RoomMap.get(user.currentRoomName);
       if (!room) return;
+      room.startGame();
       const newGame = new Game(room);
       io.to(newGame.roomName).emit("gameStartResponse", newGame.playerList);
       newGame.init();
