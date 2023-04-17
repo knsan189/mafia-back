@@ -93,7 +93,11 @@ io.on("connection", (socket) => {
     });
 
     socket.on("status", () => {
-      socket.emit("status", { user: UserMap, room: RoomMap, game: GameMap });
+      socket.emit("status", {
+        user: [...UserMap.entries()],
+        room: [...RoomMap.entries()],
+        game: [...GameMap.entries()],
+      });
     });
   } catch (error: any) {
     socket.emit("error", error.message);
