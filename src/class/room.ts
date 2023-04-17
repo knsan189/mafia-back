@@ -68,7 +68,7 @@ export default class Room implements RoomInterface {
   }
 
   log(...text: string[]) {
-    MaifaLog(`[방 ${[this.roomName]}]`, ...text);
+    MaifaLog(`[방/${[this.roomName]}]`, ...text);
   }
 
   notify(text: string) {

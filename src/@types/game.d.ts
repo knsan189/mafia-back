@@ -1,4 +1,3 @@
-/* eslint-disable no-use-before-define */
 interface User {
   socketId: string;
   nickname?: string;

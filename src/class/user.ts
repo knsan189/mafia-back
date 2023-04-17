@@ -22,27 +22,28 @@ export default class User {
     this.nickname = nickname;
     this.imgIdx = imgIdx;
     this.save();
-    this.log("신규 생성");
+    this.log("신규 접속");
   }
 
   editUser(nickname: string, imgIdx: number) {
     this.nickname = nickname;
     this.imgIdx = imgIdx;
     this.save();
-    this.log(`${nickname} 설정`);
+    this.log(nickname, "닉네임 설정");
   }
 
   joinRoom(socket: Socket, roomName: string) {
     socket.join(roomName);
     this.currentRoomName = roomName;
     this.save();
-    this.log(`'${roomName}' 방 입장`);
+    this.log(roomName, "방 입장");
   }
 
   leaveRoom(socket: Socket) {
     socket.leave(this.currentRoomName);
+    this.log(this.currentRoomName, "방 퇴장");
     this.currentRoomName = "";
-    this.log(`'${this.currentRoomName}' 방 퇴장`);
+    this.save();
   }
 
   save() {
@@ -60,10 +61,10 @@ export default class User {
     room?.removeUser(this.id, this.nickname);
     this.leaveRoom(socket);
     this.delete();
-    this.log(`'${this.currentRoomName}' 접속 해제`);
+    this.log("접속 종료");
   }
 
-  log(text: string) {
-    MaifaLog(`[유저 ${this.id}]`, text);
+  log(...text: string[]) {
+    MaifaLog(`[유저/${this.id}]`, ...text);
   }
 }

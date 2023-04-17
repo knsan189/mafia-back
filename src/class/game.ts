@@ -97,16 +97,18 @@ export default class Game {
     this.remainingTime = stageInfo.ms;
     this.gameStatusSync();
     this.notify(stageInfo.message);
-    this.log("스테이지", stageInfo.status, stageInfo.message);
+    this.log("스테이지", stageInfo.status, "로 변경");
   }
 
   setTargetPlayer(id: Player["id"]) {
     this.targetPlayer = id;
+    this.log("지목 대상 변경", id);
   }
 
   removePlayer(id: Player["id"]) {
     this.playerList = this.playerList.filter((player) => player.id !== id);
     this.playerListSync();
+    this.checkGameIsOver();
   }
 
   killPlayer(id: Player["id"]) {
@@ -160,7 +162,7 @@ export default class Game {
   }
 
   log(...text: string[]) {
-    MaifaLog(`[게임 ${[this.roomName]}]`, ...text);
+    MaifaLog(`[게임/${[this.roomName]}]`, ...text);
   }
 
   notify(text: string) {
