@@ -3,6 +3,7 @@ import { Message } from "../utils/messsage.js";
 import User from "../class/user.js";
 
 interface ServerToClientEvents {
+  status: ({ user, room, game }) => void;
   error: (message: string) => void;
   messageResponse: (response: Message) => void;
 

@@ -59,12 +59,13 @@ export default class Game {
     }));
     room.startGame();
     this.notify("게임이 잠시 후 시작 됩니다.");
-    this.log("생성");
+    this.log("게임 생성");
   }
 
   init() {
-    const second = 1000;
+    this.log("게임 시작");
     this.setStage(this.currentStage);
+    const second = 1000;
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
         let targetStage = this.currentStage + 1;
@@ -75,7 +76,6 @@ export default class Game {
       io.to(this.roomName).emit("timerSync", this.remainingTime);
       this.remainingTime -= second;
     }, second);
-    this.log("게임 시작");
   }
 
   gameEvent() {

@@ -39,7 +39,6 @@ export default class Room implements RoomInterface {
     this.save();
     this.notify(`${nickname}님이 퇴장했습니다.`);
     this.log(`유저 ${id} 방 나감`);
-
     if (this.userList.length === 0) {
       this.delete();
     }

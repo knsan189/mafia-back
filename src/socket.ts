@@ -91,6 +91,10 @@ io.on("connection", (socket) => {
       if (player?.job !== "mafia") return;
       game.setTargetPlayer(targetId);
     });
+
+    socket.on("status", () => {
+      socket.emit("status", { user: UserMap, room: RoomMap, game: GameMap });
+    });
   } catch (error: any) {
     socket.emit("error", error.message);
     MaifaLog(error);
