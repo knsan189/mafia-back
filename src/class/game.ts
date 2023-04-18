@@ -26,7 +26,9 @@ export default class Game {
 
   playerList: Player[] = [];
 
-  voteIdList: Player["id"][] = [];
+  targetList: { [key: Player["id"]]: Player["id"] } = {};
+
+  voteList: Player["id"][] = [];
 
   targetPlayer: Player["id"] = "";
 
@@ -68,9 +70,9 @@ export default class Game {
     const second = 1000;
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
+        this.gameEvent();
         let targetStage = this.currentStage + 1;
         if (targetStage === stageConfig.length) targetStage = 0;
-        this.gameEvent();
         this.setStage(targetStage);
       }
       io.to(this.roomName).emit("timerSync", this.remainingTime);
@@ -87,6 +89,50 @@ export default class Game {
         }
         break;
       }
+      /** 투표 종료 */
+      case "dayVote": {
+        const tempArr: { id: string; count: number }[] = [];
+
+        Object.keys(this.targetList).forEach((key) => {
+          const target = this.targetList[key];
+          const targetIndex = tempArr.findIndex((item) => item.id === target);
+          if (targetIndex === -1) {
+            tempArr.push({ id: target, count: 1 });
+          } else {
+            tempArr[targetIndex].count += 1;
+          }
+        });
+
+        let text = "투표 결과 : ";
+
+        tempArr
+          .sort((a, b) => b.count - a.count)
+          .forEach((item) => {
+            const targetUser = UserMap.get(item.id);
+            text += `[${targetUser?.nickname}] ${item.count}표 `;
+          });
+
+        this.notify(text);
+
+        if (!tempArr[0]) {
+          this.currentStage += 2;
+          this.notify("투표가 없으므로 아무도 죽지 않았습니다.");
+          this.log("투표 아무도 안함");
+          break;
+        }
+
+        if (tempArr[1] && tempArr[0].count === tempArr[1].count) {
+          this.currentStage += 2;
+          this.notify(`${tempArr[0].count}표 ${tempArr[1].count} 동표로 아무도 죽지 않았습니다.`);
+          this.log("투표 동표");
+          break;
+        }
+
+        const targetUser = UserMap.get(tempArr[0].id);
+        this.setTargetPlayer(tempArr[0].id);
+        this.notify(`${targetUser?.nickname}님이 ${tempArr[0].count}표로 지목 되셨습니다.`);
+        break;
+      }
       default:
         break;
     }
@@ -100,6 +146,11 @@ export default class Game {
     this.gameStatusSync();
     this.notify(stageInfo.message);
     this.log("스테이지", stageInfo.status, "로 변경");
+  }
+
+  setTarget(userId: string, targetId: string) {
+    this.targetList = { ...this.targetList, [userId]: targetId };
+    this.log(userId, "가", targetId, "을 지목");
   }
 
   setTargetPlayer(id: Player["id"]) {

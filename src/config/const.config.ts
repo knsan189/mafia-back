@@ -35,7 +35,7 @@ export const stageConfig: {
     status: "dayFinalVote",
     // ms: 60 * 1000,
     ms: 10 * 1000,
-    message: "(을)를 살리느냐 죽이느냐 그것이 문제로다.",
+    message: "살리느냐 죽이느냐 그것이 문제로다.",
   },
 ];
 

@@ -92,13 +92,22 @@ io.on("connection", (socket) => {
       game.setTargetPlayer(targetId);
     });
 
-    socket.on("status", () => {
-      socket.emit("status", {
-        user: [...UserMap.entries()],
-        room: [...RoomMap.entries()],
-        game: [...GameMap.entries()],
-      });
+    socket.on("playerTargetRequest", (targetId: string) => {
+      const user = UserMap.get(socket.id);
+      if (!user) return;
+      const game = GameMap.get(user.currentRoomName);
+      if (!game) return;
+      game.setTarget(socket.id, targetId);
+      socket.emit("playerTargetResponse", targetId);
     });
+
+    // socket.on("status", () => {
+    //   socket.emit("status", {
+    //     user: [...UserMap.entries()],
+    //     room: [...RoomMap.entries()],
+    //     game: [...GameMap.entries()],
+    //   });
+    // });
   } catch (error: any) {
     socket.emit("error", error.message);
     MaifaLog(error);
