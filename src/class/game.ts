@@ -240,6 +240,8 @@ export default class Game {
 
   gameover() {
     clearInterval(this.timer);
+    this.currentStatus = "end";
+    this.gameStatusSync();
     const room = RoomMap.get(this.roomName);
     room?.endGame();
     this.notify("게임 종료");
