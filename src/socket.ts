@@ -97,8 +97,16 @@ io.on("connection", (socket) => {
       if (!user) return;
       const game = GameMap.get(user.currentRoomName);
       if (!game) return;
-      game.setTarget(socket.id, targetId);
+      game.setTargetList(socket.id, targetId);
       socket.emit("playerTargetResponse", targetId);
+    });
+
+    socket.on("playerVoteRequest", (bool: boolean) => {
+      const user = UserMap.get(socket.id);
+      if (!user) return;
+      const game = GameMap.get(user.currentRoomName);
+      if (!game) return;
+      game.setVoteList(socket.id, bool);
     });
 
     // socket.on("status", () => {

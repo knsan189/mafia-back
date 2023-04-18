@@ -28,7 +28,7 @@ export default class Game {
 
   targetList: { [key: Player["id"]]: Player["id"] } = {};
 
-  voteList: Player["id"][] = [];
+  voteList: { [key: Player["id"]]: boolean } = {};
 
   targetPlayer: Player["id"] = "";
 
@@ -113,6 +113,7 @@ export default class Game {
           });
 
         this.notify(text);
+        this.targetList = {};
 
         if (!tempArr[0]) {
           this.currentStage += 2;
@@ -123,7 +124,9 @@ export default class Game {
 
         if (tempArr[1] && tempArr[0].count === tempArr[1].count) {
           this.currentStage += 2;
-          this.notify(`${tempArr[0].count}표 ${tempArr[1].count} 동표로 아무도 죽지 않았습니다.`);
+          this.notify(
+            `${tempArr[0].count}표 ${tempArr[1].count}표 동표이므로 아무도 죽지 않았습니다.`,
+          );
           this.log("투표 동표");
           break;
         }
@@ -133,6 +136,36 @@ export default class Game {
         this.notify(`${targetUser?.nickname}님이 ${tempArr[0].count}표로 지목 되셨습니다.`);
         break;
       }
+
+      case "dayFinal": {
+        const targetUser = UserMap.get(this.targetPlayer);
+        this.notify(`${targetUser?.nickname}을 죽일까요 살릴까요?`);
+        break;
+      }
+
+      case "dayFinalVote": {
+        let trueCount = 0;
+        let falseCount = 0;
+
+        Object.keys(this.voteList).forEach((key) => {
+          if (this.voteList[key]) trueCount += 1;
+          else falseCount += 1;
+        });
+
+        this.notify(`투표 결과 : 찬성 ${trueCount}표, 반대 ${falseCount}표`);
+        this.voteList = {};
+
+        if (trueCount > falseCount) {
+          this.killPlayer(this.targetPlayer);
+          break;
+        }
+
+        const targetUser = UserMap.get(this.targetPlayer);
+        this.notify(`반대표가 많으므로 ${targetUser?.nickname}님은 죽지 않았습니다.`);
+        this.setTargetPlayer("");
+        break;
+      }
+
       default:
         break;
     }
@@ -146,9 +179,14 @@ export default class Game {
     this.gameStatusSync();
     this.notify(stageInfo.message);
     this.log("스테이지", stageInfo.status, "로 변경");
+    this.checkGameover();
   }
 
-  setTarget(userId: string, targetId: string) {
+  setVoteList(id: string, bool: boolean) {
+    this.voteList = { ...this.voteList, [id]: bool };
+  }
+
+  setTargetList(userId: string, targetId: string) {
     this.targetList = { ...this.targetList, [userId]: targetId };
     this.log(userId, "가", targetId, "을 지목");
   }
@@ -177,14 +215,22 @@ export default class Game {
   }
 
   checkGameover() {
+    let citizenCount = 0;
     let mafiaCount = 0;
     this.playerList.forEach((player) => {
       if (player.job === "mafia") mafiaCount += 1;
+      else citizenCount += 1;
     });
 
     if (mafiaCount === 0) {
-      this.gameover();
       this.notify("마피아가 모두 죽어 시민이 승리했습니다.");
+      this.gameover();
+      return;
+    }
+
+    if (mafiaCount === citizenCount) {
+      this.notify("마피아 수가 시민 수와 같으므로, 마피아가 승리 했습니다.");
+      this.gameover();
     }
   }
 
