@@ -45,10 +45,8 @@ io.on("connection", (socket) => {
     /** 방 입장 요청 */
     socket.on("joinRoomRequest", (roomName: string) => {
       const user = UserMap.get(socket.id);
-      const room = RoomMap.get(roomName);
-      if (!user || !room) return;
+      if (!user) return;
       user.joinRoom(socket, roomName);
-      room.addUser(user.id, user.nickname);
     });
 
     socket.on("gameReadyRequest", (isReady: boolean) => {

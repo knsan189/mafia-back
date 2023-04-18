@@ -34,17 +34,26 @@ export default class User {
 
   joinRoom(socket: Socket, roomName: string) {
     socket.join(roomName);
-    this.currentRoomName = roomName;
-    this.save();
     this.log(roomName, "방 입장");
+    const room = RoomMap.get(roomName);
+    room?.addUser(this.id, this.nickname);
+    this.setCurrentRoomName(roomName);
   }
 
   leaveRoom(socket: Socket) {
     if (this.currentRoomName) {
       socket.leave(this.currentRoomName);
       this.log(this.currentRoomName, "방 퇴장");
+      const room = RoomMap.get(this.currentRoomName);
+      room?.removeUser(this.id, this.nickname);
+      const game = GameMap.get(this.currentRoomName);
+      game?.removePlayer(this.id);
     }
-    this.currentRoomName = "";
+    this.setCurrentRoomName("");
+  }
+
+  setCurrentRoomName(roomName: string) {
+    this.currentRoomName = roomName;
     this.save();
   }
 
@@ -57,10 +66,6 @@ export default class User {
   }
 
   disconnect(socket: Socket) {
-    const room = RoomMap.get(this.currentRoomName);
-    const game = GameMap.get(this.currentRoomName);
-    game?.removePlayer(this.id);
-    room?.removeUser(this.id, this.nickname);
     this.leaveRoom(socket);
     this.delete();
     this.log("접속 종료");

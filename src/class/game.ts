@@ -79,18 +79,8 @@ export default class Game {
     }, 1000);
   }
 
-  timerCallback() {
-    if (this.remainingTime <= 0) {
-      this.gameEvent();
-      let targetStage = this.currentStage + 1;
-      if (targetStage === stageConfig.length) targetStage = 0;
-      this.setStage(targetStage);
-    }
-    io.to(this.roomName).emit("timerSync", this.remainingTime);
-    this.remainingTime -= 1000;
-  }
-
   gameEvent() {
+    this.checkGameover();
     switch (this.currentStatus) {
       /** 밤이 끝났을때 */
       case "night": {
@@ -189,7 +179,6 @@ export default class Game {
     this.gameStatusSync();
     this.notify(stageInfo.message);
     this.log("스테이지", stageInfo.status, "로 변경");
-    this.checkGameover();
   }
 
   setVoteList(id: string, bool: boolean) {
@@ -250,12 +239,16 @@ export default class Game {
 
   gameover() {
     clearInterval(this.timer);
+
     this.currentStatus = "end";
     this.gameStatusSync();
+
     this.playerList = [];
     this.playerListSync();
+
     this.targetPlayer = "";
     this.targetPlayerSync();
+
     const room = RoomMap.get(this.roomName);
     room?.endGame();
     this.notify("게임 종료");
