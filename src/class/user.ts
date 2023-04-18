@@ -40,8 +40,10 @@ export default class User {
   }
 
   leaveRoom(socket: Socket) {
-    socket.leave(this.currentRoomName);
-    this.log(this.currentRoomName, "방 퇴장");
+    if (this.currentRoomName) {
+      socket.leave(this.currentRoomName);
+      this.log(this.currentRoomName, "방 퇴장");
+    }
     this.currentRoomName = "";
     this.save();
   }
