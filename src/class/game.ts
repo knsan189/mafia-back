@@ -252,6 +252,10 @@ export default class Game {
     clearInterval(this.timer);
     this.currentStatus = "end";
     this.gameStatusSync();
+    this.playerList = [];
+    this.playerListSync();
+    this.targetPlayer = "";
+    this.targetPlayerSync();
     const room = RoomMap.get(this.roomName);
     room?.endGame();
     this.notify("게임 종료");
