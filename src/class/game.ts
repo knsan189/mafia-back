@@ -67,7 +67,16 @@ export default class Game {
   init() {
     this.log("게임 시작");
     this.setStage(this.currentStage);
-    this.timer = setInterval(this.timerCallback, 1000);
+    this.timer = setInterval(() => {
+      if (this.remainingTime <= 0) {
+        this.gameEvent();
+        let targetStage = this.currentStage + 1;
+        if (targetStage === stageConfig.length) targetStage = 0;
+        this.setStage(targetStage);
+      }
+      io.to(this.roomName).emit("timerSync", this.remainingTime);
+      this.remainingTime -= 1000;
+    }, 1000);
   }
 
   timerCallback() {
@@ -241,7 +250,6 @@ export default class Game {
 
   gameover() {
     clearInterval(this.timer);
-    this.timer = undefined;
     this.currentStatus = "end";
     this.gameStatusSync();
     const room = RoomMap.get(this.roomName);
