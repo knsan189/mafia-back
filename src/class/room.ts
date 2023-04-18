@@ -62,6 +62,7 @@ export default class Room implements RoomInterface {
 
   delete() {
     RoomMap.delete(this.roomName);
+    this.log("방 삭제");
     this.notify("방 삭제");
   }
 

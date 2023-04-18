@@ -224,12 +224,14 @@ export default class Game {
 
     if (mafiaCount === 0) {
       this.notify("마피아가 모두 죽어 시민이 승리했습니다.");
+      this.log("시민 승");
       this.gameover();
       return;
     }
 
     if (mafiaCount === citizenCount) {
       this.notify("마피아 수가 시민 수와 같으므로, 마피아가 승리 했습니다.");
+      this.log("마피아 승");
       this.gameover();
     }
   }
@@ -247,6 +249,7 @@ export default class Game {
   }
 
   delete() {
+    this.log("게임 삭제");
     GameMap.delete(this.roomName);
   }
 
