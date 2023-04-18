@@ -218,8 +218,10 @@ export default class Game {
     let citizenCount = 0;
     let mafiaCount = 0;
     this.playerList.forEach((player) => {
-      if (player.job === "mafia") mafiaCount += 1;
-      else citizenCount += 1;
+      if (player.status === "alive") {
+        if (player.job === "mafia") mafiaCount += 1;
+        else citizenCount += 1;
+      }
     });
 
     if (mafiaCount === 0) {
