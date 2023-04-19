@@ -70,6 +70,7 @@ export default class Game {
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
         this.gameEvent();
+        this.checkGameover();
         let targetStage = this.currentStage + 1;
         if (targetStage === stageConfig.length) targetStage = 0;
         this.setStage(targetStage);
@@ -80,7 +81,6 @@ export default class Game {
   }
 
   gameEvent() {
-    this.checkGameover();
     switch (this.currentStatus) {
       /** 밤이 끝났을때 */
       case "night": {
