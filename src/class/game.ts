@@ -70,10 +70,11 @@ export default class Game {
     this.timer = setInterval(() => {
       if (this.remainingTime <= 0) {
         this.gameEvent();
-        this.checkGameover();
-        let targetStage = this.currentStage + 1;
-        if (targetStage === stageConfig.length) targetStage = 0;
-        this.setStage(targetStage);
+        if (!this.checkGameover()) {
+          let targetStage = this.currentStage + 1;
+          if (targetStage === stageConfig.length) targetStage = 0;
+          this.setStage(targetStage);
+        }
       }
       io.to(this.roomName).emit("timerSync", this.remainingTime);
       this.remainingTime -= 1000;
@@ -213,7 +214,7 @@ export default class Game {
     this.setTargetPlayer("");
   }
 
-  checkGameover() {
+  checkGameover(): boolean {
     let citizenCount = 0;
     let mafiaCount = 0;
     this.playerList.forEach((player) => {
@@ -227,14 +228,17 @@ export default class Game {
       this.notify("마피아가 모두 죽어 시민이 승리했습니다.");
       this.log("시민 승");
       this.gameover();
-      return;
+      return true;
     }
 
     if (mafiaCount === citizenCount) {
       this.notify("마피아 수가 시민 수와 같으므로, 마피아가 승리 했습니다.");
       this.log("마피아 승");
       this.gameover();
+      return true;
     }
+
+    return false;
   }
 
   gameover() {
