@@ -14,7 +14,6 @@ import io from "../socket.js";
 import app from "../app.js";
 
 const debug = Debug("mafiaBack");
-process.title = "mafiaBack";
 
 /**
  * Get port from environment and store in Express.

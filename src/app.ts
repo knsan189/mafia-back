@@ -7,8 +7,9 @@ import cookieParser from "cookie-parser";
 import { fileURLToPath } from "url";
 import IndexRouter from "./routes/index.js";
 
-const app = express();
+process.title = "mafiaBack";
 
+const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
