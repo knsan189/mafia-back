@@ -1,18 +1,9 @@
-/* eslint-disable no-underscore-dangle */
 import { Router } from "express";
-import path from "path";
-import { fileURLToPath } from "url";
 
 const IndexRouter = Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const isDev = `${process.env.NODE_ENV}`.trim() === "development";
 
 IndexRouter.get("/", (req, res) => {
-  res.sendFile(
-    path.join(__dirname, isDev ? "../../public/index.html" : "../../../public/index.html"),
-  );
+  res.render("index", { title: "Mafia Game Server" });
 });
 
 export default IndexRouter;
